@@ -18,6 +18,7 @@ OptionMenu "ZRadar"
 	Option "Color", "zradar_color", "RadarColor"
 	StaticText ""
 	Slider "Scan Distance", "zradar_distance", 250, 3000, 50, 0
+	Option "Refresh Rate", "zradar_refreshrate", "RadarRefreshRate"
 	StaticText ""
 	Option "Enable Battery", "zradar_battery_enable", "YesNo"
 	Option "Drain Rate", "zradar_battery_drain", "DrainRechargeRate"
@@ -46,6 +47,14 @@ OptionValue "RadarPosition"
 	1, "Top Right"
 	2, "Bottom Left"
 	3, "Bottom Right"
+}
+
+OptionValue "RadarRefreshRate"
+{
+	1, "Immediately"
+	15, "15 Tics"
+	35, "35 Tics"
+	60, "60 Tics"
 }
 
 OptionValue "DrainRechargeRate"

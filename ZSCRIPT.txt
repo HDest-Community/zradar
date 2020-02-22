@@ -1,22 +1,31 @@
 version 4.0
 
+enum BatteryLevels
+{
+	Battery_Level_1 = 25,
+	Battery_Level_2 = 75,
+	Battery_Level_3 = 100,  // [Ace] Currently unused.
+}
+
+enum BlipType
+{
+	Blip_Hostile,
+	Blip_PowerfulHostile,
+	Blip_Friendly,
+	Blip_Player,
+	Blip_FragShard
+}
+
+class RadarBlip
+{
+	double PlayerAngle;
+	vector3 PlayerPos;
+	vector3 TargetPos;
+	BlipType Type;
+}
+
 class ZRadarMainHandler : EventHandler
 {
-	enum BatteryLevels
-	{
-		Battery_Level_1 = 25,
-		Battery_Level_2 = 75,
-		Battery_Level_3 = 100,  // [Ace] Currently unused.
-	}
-
-	enum BlipType
-	{
-		Blip_Hostile,
-		Blip_Friendly,
-		Blip_Player,
-		Blip_FragShard
-	}
-
 	// ----------------------------------------------------------
 	// CORE
 	// ----------------------------------------------------------
@@ -26,14 +35,16 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarPosition;
 	private transient CVar RadarScale;
 	private transient CVar RadarOpacity;
-	private transient CVar RadarDistance;
 	private transient CVar RadarColor;
+
+	private transient CVar RadarDistance;
+	private transient CVar RadarRefreshRate;
 
 	private transient CVar BatteryEnabled;
 	private transient CVar BatteryDrainRate;
 	private transient CVar BatteryRechargeRate;
 
-	private transient Array<Actor> MonstersFound;
+	private transient Array<RadarBlip> RadarBlips;
 	private int RadarMode[8];
 	private int BatteryPower[8];
 
@@ -44,9 +55,11 @@ class ZRadarMainHandler : EventHandler
 		RadarPosition = CVar.GetCVar("zradar_position", players[consoleplayer]);
 		RadarScale = CVar.GetCVar("zradar_scale", players[consoleplayer]);
 		RadarOpacity = CVar.GetCVar("zradar_opacity", players[consoleplayer]);
-		RadarDistance = CVar.GetCVar("zradar_distance", players[consoleplayer]);
 		RadarColor = CVar.GetCVar("zradar_color", players[consoleplayer]);
 
+		RadarDistance = CVar.GetCVar("zradar_distance", players[consoleplayer]);
+		RadarRefreshRate = CVar.GetCVar("zradar_refreshrate", players[consoleplayer]);
+		
 		BatteryEnabled = CVar.GetCVar("zradar_battery_enable", players[consoleplayer]);
 		BatteryDrainRate = CVar.GetCVar("zradar_battery_drain", players[consoleplayer]);
 		BatteryRechargeRate = CVar.GetCVar("zradar_battery_recharge", players[consoleplayer]);
@@ -57,6 +70,7 @@ class ZRadarMainHandler : EventHandler
 
 	private transient int DrainTics;
 	private transient int RechargeTics;
+	private transient int ArrayRefreshTics;
 
 	override void WorldTick()
 	{
@@ -102,21 +116,29 @@ class ZRadarMainHandler : EventHandler
 		}
 
 		// [Ace] This is where enemies are updated.
-		if (CurrMode > 0)
+		if (CurrMode > 0 && ArrayRefreshTics++ >= RadarRefreshRate.GetInt())
 		{
-			MonstersFound.Clear();
+			RadarBlips.Clear();
 
 			BlockThingsIterator it = BlockThingsIterator.Create(players[consoleplayer].mo, RadarDistance.GetInt());
 			while (it.Next())
 			{
 				BlipType Type = ClassifyActor(it.Thing);
 				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) + it.Thing.Speed > RadarDistance.GetInt()) continue;
-				
+
 				if (CurrMode == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || CurrMode == 2 && (it.Thing.vel.length() > 1 || it.Thing.target) || CurrMode == 3 || Type >= Blip_Player)
 				{
-					MonstersFound.Push(it.Thing);
+					let Blip = new("RadarBlip");
+					Blip.Type = Type;
+					Blip.TargetPos = it.Thing.pos;
+					Blip.PlayerPos = players[consoleplayer].mo.pos;
+					Blip.PlayerAngle = players[consoleplayer].mo.Angle;
+
+					RadarBlips.Push(Blip);
 				}
 			}
+
+			ArrayRefreshTics = 0;
 		}
 
 		RadarMode[consoleplayer] = CurrMode;
@@ -183,6 +205,7 @@ class ZRadarMainHandler : EventHandler
 		double OriginalAlpha = RadarOpacity.GetFloat();
 		double Scale = RadarScale.GetFloat();
 		int Position = RadarPosition.GetInt();
+		int RefreshRate = RadarRefreshRate.GetInt();
 
 		if (RadarMode[consoleplayer] > 0)
 		{
@@ -195,7 +218,7 @@ class ZRadarMainHandler : EventHandler
 			if (BatteryEnabled.GetBool() && BatteryPower[consoleplayer] < Battery_Level_2)
 			{
 				double Mult = BatteryPower[consoleplayer] / double(Battery_Level_2);
-				Alpha = OriginalAlpha * (Mult > 0.35 ? Mult : 0.35);
+				Alpha *= max(0.35, Mult);
 			}
 
 			// --------------- CIRCLE ---------------
@@ -225,12 +248,12 @@ class ZRadarMainHandler : EventHandler
 
 			// --------------- BLIPS N STUFF ---------------
 
-			for (int i = 0; i < MonstersFound.Size(); ++i)
-			{
-				if (!MonstersFound[i]) continue;
+			Alpha *= RefreshRate > 1 ? 1.0 - ArrayRefreshTics / double(RefreshRate) : 1.0;
 
+			for (int i = 0; i < RadarBlips.Size(); ++i)
+			{
 				double Scale = 17 * (RadarDistance.GetInt() / 1000.0);
-				DrawBlip(StatusBar, StatusBar.CPlayer.mo, MonstersFound[i], RadarPos, DrawFlags, ClassifyActor(MonstersFound[i]), Scale, Alpha);
+				DrawBlip(StatusBar, RadarBlips[i], RadarPos, DrawFlags, Scale, Alpha);
 			}
 
 			// --------------- PRETEND WE WERE NEVER HERE ---------------
@@ -239,39 +262,36 @@ class ZRadarMainHandler : EventHandler
 		}
 	}
 
-	private ui void DrawBlip(BaseStatusBar sbar, Actor src, Actor trgt, vector2 drawPos, int flags, BlipType blipType, double scale, double alpha)
+	private ui void DrawBlip(BaseStatusBar sbar, RadarBlip blip, vector2 drawPos, int flags, double scale, double alpha)
 	{
-		if (!src || !trgt) return;
+		if (!blip) return;
 
-		vector3 dif = (src.pos.x - trgt.pos.x, src.pos.y - trgt.pos.y, trgt.pos.z - src.pos.z);
+		vector3 dif = (blip.PlayerPos.x - Blip.TargetPos.x, blip.PlayerPos.y - blip.TargetPos.y, blip.TargetPos.z - Blip.PlayerPos.z);
 
 		// [Ace] This part of the code (the one with the maths) is the only one that doesn't directly belong to me. I don't know what the variables are supposed to mean because they use ye olde Ken Silverman naming conventions
 		// and make fuck all sense to everyone else but the author. Name your damn variables properly! Anyway, I think the 'd' stands for "draw".
-		double dx = dif.x * cos(-src.Angle) - dif.y * sin(-src.Angle);
-		double dy = dif.x * sin(-src.Angle) + dif.y * cos(-src.Angle);
+		double dx = dif.x * cos(-Blip.PlayerAngle) - dif.y * sin(-Blip.PlayerAngle);
+		double dy = dif.x * sin(-Blip.PlayerAngle) + dif.y * cos(-Blip.PlayerAngle);
 		dx /= scale; dx += drawPos.y;
 		dy /= scale; dy += drawPos.x;
 
 		string BlipImage = "";
-		switch (blipType)
+		switch (blip.Type)
 		{
 			case Blip_Hostile:
-				if (trgt.Health >= 1000)
-				{
-					BlipImage = dif.z <= -30 ? "GLDBELOW" : (dif.z >= 30 ? "GLDABOVE" : "GLDDOT");
-				}
-				else
-				{
-					BlipImage = dif.z <= -30 ? "REDBELOW" : (dif.z >= 30 ? "REDABOVE" : "REDDOT");
-				}
+				BlipImage = dif.z <= -60 ? "REDBELOW" : (dif.z >= 60 ? "REDABOVE" : "REDDOT");
+				break;
+
+			case Blip_PowerfulHostile:
+				BlipImage = dif.z <= -60 ? "GLDBELOW" : (dif.z >= 60 ? "GLDABOVE" : "GLDDOT");
 				break;
 
 			case Blip_Friendly:
-				BlipImage = dif.z <= -30 ? "CYNBELOW" : (dif.z >= 30 ? "CYNABOVE" : "CYNDOT");
+				BlipImage = dif.z <= -60 ? "CYNBELOW" : (dif.z >= 60 ? "CYNABOVE" : "CYNDOT");
 				break;
 
 			case Blip_Player:
-				BlipImage = dif.z <= -30 ? "REDBELOW" : (dif.z >= 30 ? "REDABOVE" : "REDDOT");
+				BlipImage = dif.z <= -60 ? "REDBELOW" : (dif.z >= 60 ? "REDABOVE" : "REDDOT");
 				break;
 
 			case Blip_FragShard:
@@ -290,7 +310,7 @@ class ZRadarMainHandler : EventHandler
 	{
 		if (a.GetClassName() == 'BFGNecroShard') return Blip_FragShard;
 		if (a is "PlayerPawn") return Blip_Player;
-		if (a.bISMONSTER) return a.bFRIENDLY ? Blip_Friendly : Blip_Hostile;
+		if (a.bISMONSTER) return a.bFRIENDLY ? Blip_Friendly : (a.GetSpawnHealth() >= 1000 ? Blip_PowerfulHostile : Blip_Hostile);
 		
 		return -1;
 	}
