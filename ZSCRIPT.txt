@@ -291,7 +291,7 @@ class ZRadarMainHandler : EventHandler
 				break;
 
 			case Blip_Player:
-				BlipImage = dif.z <= -60 ? "REDBELOW" : (dif.z >= 60 ? "REDABOVE" : "REDDOT");
+				BlipImage = dif.z <= -60 ? "GRNBELOW" : (dif.z >= 60 ? "GRNABOVE" : "GRNDOT");
 				break;
 
 			case Blip_FragShard:
