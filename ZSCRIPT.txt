@@ -108,7 +108,7 @@ class ZRadarMainHandler : EventHandler
 			BlockThingsIterator it = BlockThingsIterator.Create(players[consoleplayer].mo, RadarDistance.GetInt());
 			while (it.Next())
 			{
-				if (it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) > RadarDistance.GetInt()) continue;
+				if (it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) + it.Thing.Speed > RadarDistance.GetInt()) continue;
 
 				BlipType Type = ClassifyActor(it.Thing);
 				if (CurrMode > 0 && Type > -1 && (CurrMode == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || CurrMode == 2 && it.Thing.vel.length() > 0 || CurrMode == 3 || Type >= Blip_Player))
