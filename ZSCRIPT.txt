@@ -33,6 +33,7 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar BatteryDrainRate;
 	private transient CVar BatteryRechargeRate;
 
+	private transient Array<Actor> MonstersFound;
 	private int RadarMode[8];
 	private int BatteryPower[8];
 
@@ -108,10 +109,10 @@ class ZRadarMainHandler : EventHandler
 			BlockThingsIterator it = BlockThingsIterator.Create(players[consoleplayer].mo, RadarDistance.GetInt());
 			while (it.Next())
 			{
-				if (it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) + it.Thing.Speed > RadarDistance.GetInt()) continue;
-
+				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) + it.Thing.Speed > RadarDistance.GetInt()) continue;
+				
 				BlipType Type = ClassifyActor(it.Thing);
-				if (CurrMode > 0 && Type > -1 && (CurrMode == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || CurrMode == 2 && it.Thing.vel.length() > 0 || CurrMode == 3 || Type >= Blip_Player))
+				if (CurrMode == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || CurrMode == 2 && (it.Thing.vel.length() > 1 || it.Thing.target) || CurrMode == 3 || Type >= Blip_Player)
 				{
 					MonstersFound.Push(it.Thing);
 				}
@@ -172,8 +173,6 @@ class ZRadarMainHandler : EventHandler
 	private transient ui int Frame;
 	private transient ui int CircleUpdateTics;
 
-	private transient Array<Actor> MonstersFound;
-
 	override void RenderUnderlay(RenderEvent e)
 	{
 		mMainFont = HUDFont.Create(FontName);
@@ -187,8 +186,8 @@ class ZRadarMainHandler : EventHandler
 
 		if (RadarMode[consoleplayer] > 0)
 		{
-			StatusBar.SetSize(StatusBar.RelTop, int(480 / Scale), int(320 / Scale));
-			StatusBar.BeginHUD();
+			StatusBar.SetSize(StatusBar.RelTop, int(640 / Scale), int(480 / Scale));
+			StatusBar.BeginHUD(1.0, true);
 
 			// --------------- SHARED ---------------
 
@@ -201,7 +200,7 @@ class ZRadarMainHandler : EventHandler
 
 			// --------------- CIRCLE ---------------
 
-			if (CircleUpdateTics++ == 6)
+			if (CircleUpdateTics++ == 9)
 			{
 				Frame++;
 				Frame %= RadarFrames;
@@ -240,6 +239,8 @@ class ZRadarMainHandler : EventHandler
 
 	private ui void DrawBlip(BaseStatusBar sbar, Actor src, Actor trgt, vector2 drawPos, int flags, BlipType blipType, double scale, double alpha)
 	{
+		if (!src || !trgt) return;
+
 		vector3 dif = (src.pos.x - trgt.pos.x, src.pos.y - trgt.pos.y, trgt.pos.z - src.pos.z);
 
 		// [Ace] This part of the code (the one with the maths) is the only one that doesn't directly belong to me. I don't know what the variables are supposed to mean because they use ye olde Ken Silverman naming conventions

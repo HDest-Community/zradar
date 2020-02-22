@@ -1,6 +1,5 @@
 AddOptionMenu "OptionsMenu"
 {
-	StaticText " "
 	Submenu "ZRadar Options", "ZRadar"
 }
 
