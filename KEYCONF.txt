@@ -1,0 +1,3 @@
+AddKeySection "ZRadar" ZRadar
+alias ChangeMode "netevent ChangeRadarMode"
+addmenukey "Change Radar Mode" ChangeMode

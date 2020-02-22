@@ -1,0 +1,16 @@
+Accensus
+- Code
+- Some graphics.
+
+kodi
+- Help with the blip porting.
+
+PhysixCat
+- Various suggestions and primary motivator behind yoinking the radar in the first place.
+- Lots of bugtesting.
+
+Caligari87
+- Suggesting the mod name.
+
+Saegiru
+- Ultimate DoomVisor from which I took the original radar. Almost nothing is left from that.

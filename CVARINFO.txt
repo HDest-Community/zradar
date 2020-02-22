@@ -1,0 +1,11 @@
+user int zradar_defmode = 2;
+
+user int zradar_position = 1;
+user float zradar_scale = 1.0;
+user float zradar_opacity = 0.5;
+user int zradar_distance = 1000;
+user int zradar_color = 0;
+
+user bool zradar_battery_enable = false;
+user int zradar_battery_drain = 70;
+user int zradar_battery_recharge = 17;
