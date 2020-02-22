@@ -50,32 +50,31 @@ class ZRadarMainHandler : EventHandler
 		BatteryDrainRate = CVar.GetCVar("zradar_battery_drain", players[consoleplayer]);
 		BatteryRechargeRate = CVar.GetCVar("zradar_battery_recharge", players[consoleplayer]);
 
-		RadarMode[consoleplayer] = DefaultRadarMode.GetInt();
 		BatteryPower[consoleplayer] = 100;
+		RadarMode[consoleplayer] = BatteryEnabled.GetBool() ? GetRadarMode(BatteryPower[consoleplayer]) : DefaultRadarMode.GetInt();
 	}
 
 	private transient int DrainTics;
 	private transient int RechargeTics;
-	private transient int MonsterUpdateTics;
 
 	override void WorldTick()
 	{
 		int DrainRate = BatteryDrainRate.GetInt();
 		int RechargeRate = BatteryRechargeRate.GetInt();
+		int CurrMode = RadarMode[consoleplayer];
 
 		// [Ace] Battery stuff.
 		if (BatteryEnabled.GetBool())
 		{
 			// [Ace] Draining.
-			if (RadarMode[consoleplayer] > 0 && DrainTics++ == DrainRate)
+			if (CurrMode > 0 && DrainTics++ == DrainRate)
 			{
 				BatteryPower[consoleplayer]--;
-				RadarMode[consoleplayer] = GetRadarMode(BatteryPower[consoleplayer]);
+				CurrMode = GetRadarMode(BatteryPower[consoleplayer]);
 
 				if (BatteryPower[consoleplayer] <= 0)
 				{
-					RadarMode[consoleplayer] = 0;
-
+					CurrMode = 0;
 					let plr = players[consoleplayer].mo;
 					if (plr)
 					{
@@ -88,16 +87,21 @@ class ZRadarMainHandler : EventHandler
 			}
 
 			// [Ace] Recharging.
-			else if (RadarMode[consoleplayer] == 0 && BatteryPower[consoleplayer] < 100 && RechargeTics++ == RechargeRate)
+			else if (CurrMode == 0 && BatteryPower[consoleplayer] < 100 && RechargeTics++ == RechargeRate)
 			{
-				BatteryPower[consoleplayer]++;
+				let plr = players[consoleplayer].mo;
+				if (plr && ++BatteryPower[consoleplayer] == 100)
+				{
+					plr.A_Print("\c[Cyan]Scanner fully charged!");
+					plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
+				}
+
 				RechargeTics = 0;
 			}
 		}
 
 		// [Ace] This is where enemies are updated.
-		int Mode = RadarMode[consoleplayer];
-		if (Mode > 0)
+		if (CurrMode > 0)
 		{
 			MonstersFound.Clear();
 
@@ -107,14 +111,14 @@ class ZRadarMainHandler : EventHandler
 				if (it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) > RadarDistance.GetInt()) continue;
 
 				BlipType Type = ClassifyActor(it.Thing);
-				if (Mode > 0 && Type > -1 && (Mode == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || Mode == 2 && it.Thing.vel.length() > 0 || Mode == 3 || Type >= Blip_Player))
+				if (CurrMode > 0 && Type > -1 && (CurrMode == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || CurrMode == 2 && it.Thing.vel.length() > 0 || CurrMode == 3 || Type >= Blip_Player))
 				{
 					MonstersFound.Push(it.Thing);
 				}
 			}
 		}
 
-		MonsterUpdateTics = 0;
+		RadarMode[consoleplayer] = CurrMode;
 	}
 
 	override void NetworkProcess(ConsoleEvent e)
