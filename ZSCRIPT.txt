@@ -109,9 +109,9 @@ class ZRadarMainHandler : EventHandler
 			BlockThingsIterator it = BlockThingsIterator.Create(players[consoleplayer].mo, RadarDistance.GetInt());
 			while (it.Next())
 			{
+				BlipType Type = ClassifyActor(it.Thing);
 				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) + it.Thing.Speed > RadarDistance.GetInt()) continue;
 				
-				BlipType Type = ClassifyActor(it.Thing);
 				if (CurrMode == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || CurrMode == 2 && (it.Thing.vel.length() > 1 || it.Thing.target) || CurrMode == 3 || Type >= Blip_Player)
 				{
 					MonstersFound.Push(it.Thing);
