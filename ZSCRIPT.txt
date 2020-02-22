@@ -147,15 +147,15 @@ class ZRadarMainHandler : EventHandler
 		{
 			if (BatteryEnabled.GetBool())
 			{
-				RadarMode[consoleplayer] = RadarMode[consoleplayer] == 0 ? GetRadarMode(BatteryPower[consoleplayer]) : 0;
+				RadarMode[e.Player] = RadarMode[e.Player] == 0 ? GetRadarMode(BatteryPower[e.Player]) : 0;
 			}
 			else
 			{
-				++RadarMode[consoleplayer] %= 4;
+				++RadarMode[e.Player] %= 4;
 			}
 
 			string Message = "";
-			switch (RadarMode[consoleplayer])
+			switch (RadarMode[e.Player])
 			{
 				case 0: Message = "\c[Orange]Scanner Deactivated"; break;
 				case 1: Message = "\c[Red]Local Scanner Activated"; break;
@@ -163,7 +163,7 @@ class ZRadarMainHandler : EventHandler
 				case 3: Message = "\c[Green]Full Scanner Activated"; break;
 			}
 
-			let plr = players[consoleplayer].mo;
+			let plr = players[e.Player].mo;
 			if (plr)
 			{
 				plr.A_Print(Message);
