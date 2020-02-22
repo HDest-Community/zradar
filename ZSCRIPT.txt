@@ -76,20 +76,19 @@ class ZRadarMainHandler : EventHandler
 	{
 		int DrainRate = BatteryDrainRate.GetInt();
 		int RechargeRate = BatteryRechargeRate.GetInt();
-		int CurrMode = RadarMode[consoleplayer];
 
 		// [Ace] Battery stuff.
 		if (BatteryEnabled.GetBool())
 		{
 			// [Ace] Draining.
-			if (CurrMode > 0 && DrainTics++ == DrainRate)
+			if (RadarMode[consoleplayer] > 0 && DrainTics++ == DrainRate)
 			{
 				BatteryPower[consoleplayer]--;
-				CurrMode = GetRadarMode(BatteryPower[consoleplayer]);
+				RadarMode[consoleplayer] = GetRadarMode(BatteryPower[consoleplayer]);
 
 				if (BatteryPower[consoleplayer] <= 0)
 				{
-					CurrMode = 0;
+					RadarMode[consoleplayer] = 0;
 					let plr = players[consoleplayer].mo;
 					if (plr)
 					{
@@ -102,7 +101,7 @@ class ZRadarMainHandler : EventHandler
 			}
 
 			// [Ace] Recharging.
-			else if (CurrMode == 0 && BatteryPower[consoleplayer] < 100 && RechargeTics++ == RechargeRate)
+			else if (RadarMode[consoleplayer] == 0 && BatteryPower[consoleplayer] < 100 && RechargeTics++ == RechargeRate)
 			{
 				let plr = players[consoleplayer].mo;
 				if (plr && ++BatteryPower[consoleplayer] == 100)
@@ -116,7 +115,7 @@ class ZRadarMainHandler : EventHandler
 		}
 
 		// [Ace] This is where enemies are updated.
-		if (CurrMode > 0 && ArrayRefreshTics++ >= RadarRefreshRate.GetInt())
+		if (RadarMode[consoleplayer] > 0 && ArrayRefreshTics++ >= RadarRefreshRate.GetInt())
 		{
 			RadarBlips.Clear();
 
@@ -126,7 +125,7 @@ class ZRadarMainHandler : EventHandler
 				BlipType Type = ClassifyActor(it.Thing);
 				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) + it.Thing.Speed > RadarDistance.GetInt()) continue;
 
-				if (CurrMode == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || CurrMode == 2 && (it.Thing.vel.length() > 1 || it.Thing.target) || CurrMode == 3 || Type >= Blip_Player)
+				if (RadarMode[consoleplayer] == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || RadarMode[consoleplayer] == 2 && (it.Thing.vel.length() > 1 || it.Thing.target || it.Thing.master && it.Thing.master && it.Thing.master is "PlayerPawn") || RadarMode[consoleplayer] == 3 || Type >= Blip_Player)
 				{
 					let Blip = new("RadarBlip");
 					Blip.Type = Type;
@@ -140,33 +139,29 @@ class ZRadarMainHandler : EventHandler
 
 			ArrayRefreshTics = 0;
 		}
-
-		RadarMode[consoleplayer] = CurrMode;
 	}
 
 	override void NetworkProcess(ConsoleEvent e)
 	{
 		if (e.Name ~== "ChangeRadarMode")
 		{
-			int CurrMode = RadarMode[consoleplayer];
 			if (BatteryEnabled.GetBool())
 			{
-				CurrMode = CurrMode == 0 ? GetRadarMode(BatteryPower[consoleplayer]) : 0;
+				RadarMode[consoleplayer] = RadarMode[consoleplayer] == 0 ? GetRadarMode(BatteryPower[consoleplayer]) : 0;
 			}
 			else
 			{
-				++CurrMode %= 4;
+				++RadarMode[consoleplayer] %= 4;
 			}
 
 			string Message = "";
-			switch (CurrMode)
+			switch (RadarMode[consoleplayer])
 			{
 				case 0: Message = "\c[Orange]Scanner Deactivated"; break;
 				case 1: Message = "\c[Red]Local Scanner Activated"; break;
 				case 2: Message = "\c[Yellow]Movement Scanner Activated"; break;
 				case 3: Message = "\c[Green]Full Scanner Activated"; break;
 			}
-			RadarMode[consoleplayer] = CurrMode;
 
 			let plr = players[consoleplayer].mo;
 			if (plr)
