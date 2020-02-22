@@ -227,6 +227,8 @@ class ZRadarMainHandler : EventHandler
 
 			for (int i = 0; i < MonstersFound.Size(); ++i)
 			{
+				if (!MonstersFound[i]) continue;
+
 				double Scale = 17 * (RadarDistance.GetInt() / 1000.0);
 				DrawBlip(StatusBar, StatusBar.CPlayer.mo, MonstersFound[i], RadarPos, DrawFlags, ClassifyActor(MonstersFound[i]), Scale, Alpha);
 			}
