@@ -16,6 +16,12 @@ enum BlipType
 	Blip_FragShard
 }
 
+enum UnitType
+{
+	Unit_MapUnit = 1,
+	Unit_HDMeter
+}
+
 class RadarBlip
 {
 	double PlayerAngle;
@@ -36,6 +42,7 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarScale;
 	private transient CVar RadarOpacity;
 	private transient CVar RadarColor;
+	private transient CVar RadarRangeUnits;
 	private transient CVar RadarFrameTics;
 
 	private transient CVar RadarDistance;
@@ -57,6 +64,7 @@ class ZRadarMainHandler : EventHandler
 		RadarScale = CVar.GetCVar("zradar_scale", players[consoleplayer]);
 		RadarOpacity = CVar.GetCVar("zradar_opacity", players[consoleplayer]);
 		RadarColor = CVar.GetCVar("zradar_color", players[consoleplayer]);
+		RadarRangeUnits = CVar.GetCVar("zradar_rangeunits", players[consoleplayer]);
 		RadarFrameTics = CVar.GetCVar("zradar_frametics", players[consoleplayer]);
 
 		RadarDistance = CVar.GetCVar("zradar_distance", players[consoleplayer]);
@@ -178,11 +186,11 @@ class ZRadarMainHandler : EventHandler
 	// UI
 	// ----------------------------------------------------------
 
-	const RadarFrames = 12;
+	const RadarFrames = 11;
 	static const string RadarGraphics[] =
 	{
-		"RADAR1", "R1SAFEZ0", "R1SAFEZ1", "R1SAFEZ2", "R1SAFEZ3", "R1SAFEZ4", "R1SAFEZ5", "R1SAFEZ6", "R1SAFEZ7", "R1SAFEZ8", "R1SAFEZ9", "R1SAFEZA",
-		"RADAR2", "R2SAFEZ0", "R2SAFEZ1", "R2SAFEZ2", "R2SAFEZ3", "R2SAFEZ4", "R2SAFEZ5", "R2SAFEZ6", "R2SAFEZ7", "R2SAFEZ8", "R2SAFEZ9", "R2SAFEZA"
+		"R1SAFEZ0", "R1SAFEZ1", "R1SAFEZ2", "R1SAFEZ3", "R1SAFEZ4", "R1SAFEZ5", "R1SAFEZ6", "R1SAFEZ7", "R1SAFEZ8", "R1SAFEZ9", "R1SAFEZA",
+		"R2SAFEZ0", "R2SAFEZ1", "R2SAFEZ2", "R2SAFEZ3", "R2SAFEZ4", "R2SAFEZ5", "R2SAFEZ6", "R2SAFEZ7", "R2SAFEZ8", "R2SAFEZ9", "R2SAFEZA"
 	};
 
 	const FontName = "ZRDRFONT";
@@ -230,7 +238,27 @@ class ZRadarMainHandler : EventHandler
 
 			vector2 RadarPos; int DrawFlags;
 			[RadarPos, DrawFlags] = GetPositionData(Position);
-			StatusBar.DrawImage(RadarGraphics[12 * RadarColor.GetInt() + Frame], RadarPos, DrawFlags, Alpha);
+			StatusBar.DrawImage(RadarGraphics[RadarFrames * RadarColor.GetInt() + Frame], RadarPos, DrawFlags, Alpha);
+
+			int RangeColor = 0;
+			switch (RadarColor.GetInt())
+			{
+				case 0: RangeColor = Font.CR_LIGHTBLUE; break;
+				case 1: RangeColor = Font.CR_GREEN; break;
+			}
+
+			// [Ace] Range.
+			int RangeUnits = RadarRangeUnits.GetInt();
+			for (int i = 3; RangeUnits > 0 && i > 0; --i)
+			{
+				string RangeString = "";
+				switch (RangeUnits)
+				{
+					case Unit_MapUnit: RangeString = StatusBar.FormatNumber(RadarDistance.GetInt() / i, 1, 4); break;
+					case Unit_HDMeter: RangeString = StatusBar.FormatNumber(RadarDistance.GetInt() / i / 42, 1, 3).."m"; break;
+				}
+				StatusBar.DrawString(mMainFont, RangeString, (RadarPos.x - 1, RadarPos.y + 2 - 20 * (4 - i)), DrawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, RangeColor, Alpha * 0.75);
+			}
 
 			// --------------- CROSS ---------------
 
