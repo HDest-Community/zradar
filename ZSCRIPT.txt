@@ -249,15 +249,15 @@ class ZRadarMainHandler : EventHandler
 
 			// [Ace] Range.
 			int RangeUnits = RadarRangeUnits.GetInt();
-			for (int i = 3; RangeUnits > 0 && i > 0; --i)
+			for (int i = 1; RangeUnits > 0 && i <= 3; ++i)
 			{
 				string RangeString = "";
 				switch (RangeUnits)
 				{
-					case Unit_MapUnit: RangeString = StatusBar.FormatNumber(RadarDistance.GetInt() / i, 1, 4); break;
-					case Unit_HDMeter: RangeString = StatusBar.FormatNumber(RadarDistance.GetInt() / i / 42, 1, 3).."m"; break;
+					case Unit_MapUnit: RangeString = StatusBar.FormatNumber(int(RadarDistance.GetInt() / 3.0 * i), 1, 4); break;
+					case Unit_HDMeter: RangeString = StatusBar.FormatNumber(int(RadarDistance.GetInt() / 3.0 / 42.0 * i), 1, 3).."m"; break;
 				}
-				StatusBar.DrawString(mMainFont, RangeString, (RadarPos.x - 1, RadarPos.y + 2 - 20 * (4 - i)), DrawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, RangeColor, Alpha * 0.75);
+				StatusBar.DrawString(mMainFont, RangeString, (RadarPos.x - 1, RadarPos.y + 2 - 20 * i), DrawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, RangeColor, Alpha * 0.75);
 			}
 
 			// --------------- CROSS ---------------
