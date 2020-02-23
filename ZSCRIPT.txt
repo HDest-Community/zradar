@@ -133,7 +133,7 @@ class ZRadarMainHandler : EventHandler
 			while (it.Next())
 			{
 				BlipType Type = ClassifyActor(it.Thing);
-				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) + it.Thing.Speed > RadarDistance.GetInt()) continue;
+				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) - it.Thing.Radius + it.Thing.vel.length() > RadarDistance.GetInt()) continue;
 
 				if (RadarMode[consoleplayer] == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || RadarMode[consoleplayer] == 2 && (it.Thing.vel.length() > 0 || it.Thing.target || it.Thing.master && it.Thing.master && it.Thing.master is "PlayerPawn") || RadarMode[consoleplayer] == 3 || Type >= Blip_Player)
 				{
