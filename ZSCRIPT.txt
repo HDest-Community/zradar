@@ -36,6 +36,7 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarScale;
 	private transient CVar RadarOpacity;
 	private transient CVar RadarColor;
+	private transient CVar RadarFrameTics;
 
 	private transient CVar RadarDistance;
 	private transient CVar RadarRefreshRate;
@@ -56,6 +57,7 @@ class ZRadarMainHandler : EventHandler
 		RadarScale = CVar.GetCVar("zradar_scale", players[consoleplayer]);
 		RadarOpacity = CVar.GetCVar("zradar_opacity", players[consoleplayer]);
 		RadarColor = CVar.GetCVar("zradar_color", players[consoleplayer]);
+		RadarFrameTics = CVar.GetCVar("zradar_frametics", players[consoleplayer]);
 
 		RadarDistance = CVar.GetCVar("zradar_distance", players[consoleplayer]);
 		RadarRefreshRate = CVar.GetCVar("zradar_refreshrate", players[consoleplayer]);
@@ -218,7 +220,7 @@ class ZRadarMainHandler : EventHandler
 
 			// --------------- CIRCLE ---------------
 
-			if (CircleUpdateTics++ == 9)
+			if (CircleUpdateTics++ >= RadarFrameTics.GetInt())
 			{
 				Frame++;
 				Frame %= RadarFrames;
