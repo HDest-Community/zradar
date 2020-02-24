@@ -93,7 +93,7 @@ class ZRadarMainHandler : EventHandler
 		if (BatteryEnabled.GetBool())
 		{
 			// [Ace] Draining.
-			if (RadarMode[consoleplayer] > 0 && DrainTics++ == DrainRate)
+			if (RadarMode[consoleplayer] > 0 && DrainTics++ >= DrainRate)
 			{
 				BatteryPower[consoleplayer]--;
 				RadarMode[consoleplayer] = GetRadarMode(BatteryPower[consoleplayer]);
@@ -113,7 +113,7 @@ class ZRadarMainHandler : EventHandler
 			}
 
 			// [Ace] Recharging.
-			else if (RadarMode[consoleplayer] == 0 && BatteryPower[consoleplayer] < 100 && RechargeTics++ == RechargeRate)
+			else if (RadarMode[consoleplayer] == 0 && BatteryPower[consoleplayer] < 100 && RechargeTics++ >= RechargeRate)
 			{
 				let plr = players[consoleplayer].mo;
 				if (plr && ++BatteryPower[consoleplayer] == 100)
