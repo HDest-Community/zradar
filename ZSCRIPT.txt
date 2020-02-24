@@ -187,11 +187,6 @@ class ZRadarMainHandler : EventHandler
 	// ----------------------------------------------------------
 
 	const RadarFrames = 11;
-	static const string RadarGraphics[] =
-	{
-		"R1SAFEZ0", "R1SAFEZ1", "R1SAFEZ2", "R1SAFEZ3", "R1SAFEZ4", "R1SAFEZ5", "R1SAFEZ6", "R1SAFEZ7", "R1SAFEZ8", "R1SAFEZ9", "R1SAFEZA",
-		"R2SAFEZ0", "R2SAFEZ1", "R2SAFEZ2", "R2SAFEZ3", "R2SAFEZ4", "R2SAFEZ5", "R2SAFEZ6", "R2SAFEZ7", "R2SAFEZ8", "R2SAFEZ9", "R2SAFEZA"
-	};
 
 	const FontName = "ZRDRFONT";
 
@@ -238,8 +233,10 @@ class ZRadarMainHandler : EventHandler
 
 			vector2 RadarPos; int DrawFlags;
 			[RadarPos, DrawFlags] = GetPositionData(Position);
-			StatusBar.DrawImage(RadarGraphics[RadarFrames * RadarColor.GetInt() + Frame], RadarPos, DrawFlags, Alpha);
+			StatusBar.DrawImage("R"..RadarColor.GetInt().."SAFEZ"..String.Format("%x", Frame), RadarPos, DrawFlags, Alpha);
 
+
+			// [Ace] Range.
 			int RangeColor = 0;
 			switch (RadarColor.GetInt())
 			{
@@ -247,7 +244,6 @@ class ZRadarMainHandler : EventHandler
 				case 1: RangeColor = Font.CR_GREEN; break;
 			}
 
-			// [Ace] Range.
 			int RangeUnits = RadarRangeUnits.GetInt();
 			for (int i = 1; RangeUnits > 0 && i <= 3; ++i)
 			{
