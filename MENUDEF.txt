@@ -17,6 +17,7 @@ OptionMenu "ZRadar"
 	Slider "Opacity", "zradar_opacity", 0.05, 1.0, 0.05, 2
 	Option "Color", "zradar_color", "RadarColor"
 	Option "Range Units", "zradar_rangeunits", "RangeUnits"
+	Slider "Range Divisions", "zradar_rangedivisions", 2, 5, 1, 0
 	Slider "Sweep Delay (Tics)", "zradar_frametics", 1, 20, 1, 0
 	StaticText ""
 	Slider "Scan Distance", "zradar_distance", 250, 3000, 50, 0
