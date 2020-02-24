@@ -50,12 +50,13 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarRefreshRate;
 
 	private transient CVar BatteryEnabled;
-	private transient CVar BatteryDrainRate;
-	private transient CVar BatteryRechargeRate;
+	private transient CVar BatteryDrainTime;
+	private transient CVar BatteryRechargeTime;
 
 	private transient Array<RadarBlip> RadarBlips;
 	private int RadarMode[8];
 	private int BatteryPower[8];
+	private int AccumulatedDrain[8];
 
 	override void OnRegister()
 	{
@@ -73,29 +74,28 @@ class ZRadarMainHandler : EventHandler
 		RadarRefreshRate = CVar.GetCVar("zradar_refreshrate", players[consoleplayer]);
 		
 		BatteryEnabled = CVar.GetCVar("zradar_battery_enable", players[consoleplayer]);
-		BatteryDrainRate = CVar.GetCVar("zradar_battery_drain", players[consoleplayer]);
-		BatteryRechargeRate = CVar.GetCVar("zradar_battery_recharge", players[consoleplayer]);
+		BatteryDrainTime = CVar.GetCVar("zradar_battery_draintime", players[consoleplayer]);
+		BatteryRechargeTime = CVar.GetCVar("zradar_battery_rechargetime", players[consoleplayer]);
 
 		BatteryPower[consoleplayer] = 100;
 		RadarMode[consoleplayer] = BatteryEnabled.GetBool() ? GetRadarMode(BatteryPower[consoleplayer]) : DefaultRadarMode.GetInt();
 	}
 
-	private transient int DrainTics;
-	private transient int RechargeTics;
+	
 	private transient int ArrayRefreshTics;
 
 	override void WorldTick()
 	{
-		int DrainRate = BatteryDrainRate.GetInt();
-		int RechargeRate = BatteryRechargeRate.GetInt();
+		int DrainTime = int(35 * 60 * BatteryDrainTime.GetFloat());
+		int RechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
 
 		// [Ace] Battery stuff.
 		if (BatteryEnabled.GetBool())
 		{
 			// [Ace] Draining.
-			if (RadarMode[consoleplayer] > 0 && DrainTics++ >= DrainRate)
+			if (RadarMode[consoleplayer] > 0)
 			{
-				BatteryPower[consoleplayer]--;
+				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]++ / double(DrainTime)) * 100);
 				RadarMode[consoleplayer] = GetRadarMode(BatteryPower[consoleplayer]);
 
 				if (BatteryPower[consoleplayer] <= 0)
@@ -108,21 +108,19 @@ class ZRadarMainHandler : EventHandler
 						plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 					}
 				}
-
-				DrainTics = 0;
 			}
 
 			// [Ace] Recharging.
-			else if (RadarMode[consoleplayer] == 0 && BatteryPower[consoleplayer] < 100 && RechargeTics++ >= RechargeRate)
+			else if (RadarMode[consoleplayer] == 0 && BatteryPower[consoleplayer] < 100)
 			{
+				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]-- / double(DrainTime)) * 100);
+
 				let plr = players[consoleplayer].mo;
-				if (plr && ++BatteryPower[consoleplayer] == 100)
+				if (plr && BatteryPower[consoleplayer] == 100)
 				{
 					plr.A_Print("\c[Cyan]Scanner fully charged!");
 					plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 				}
-
-				RechargeTics = 0;
 			}
 		}
 

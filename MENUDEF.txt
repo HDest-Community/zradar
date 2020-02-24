@@ -24,8 +24,8 @@ OptionMenu "ZRadar"
 	Option "Refresh Rate", "zradar_refreshrate", "RadarRefreshRate"
 	StaticText ""
 	Option "Enable Battery", "zradar_battery_enable", "YesNo"
-	Option "Drain Rate", "zradar_battery_drain", "DrainRechargeRate"
-	Option "Recharge Rate", "zradar_battery_recharge", "DrainRechargeRate"
+	Slider "Drain Time (Minutes)", "zradar_battery_draintime", 0.50, 60, 0.5, 1
+	Slider "Recharge Time (Minutes)", "zradar_battery_rechargetime", 0.50, 60, 0.5, 1
 	StaticText ""
 	StaticText "Enabling the battery allows for a more immersive experience.", "White"
 	StaticText "Modes are handled automatically and the radar will weaken as battery is drained.", "White"
@@ -58,19 +58,6 @@ OptionValue "RadarRefreshRate"
 	15, "15 Tics"
 	35, "35 Tics"
 	60, "60 Tics"
-}
-
-OptionValue "DrainRechargeRate"
-{
-	17, "0.5 Seconds"
-	35, "1 Second"
-	52, "1.5 Seconds"
-	70, "2 Seconds"
-	105, "3 Seconds"
-	175, "5 Seconds"
-	350, "10 Seconds"
-	700, "20 Seconds"
-	1050, "30 Seconds"
 }
 
 OptionValue "RadarColor"

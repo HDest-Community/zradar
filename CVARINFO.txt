@@ -12,5 +12,5 @@ user int zradar_distance = 1000;
 user int zradar_refreshrate = 1;
 
 user bool zradar_battery_enable = false;
-user int zradar_battery_drain = 70;
-user int zradar_battery_recharge = 17;
+user float zradar_battery_draintime = 5;
+user float zradar_battery_rechargetime = 10;
