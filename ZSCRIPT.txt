@@ -1,12 +1,5 @@
 version 4.0
 
-enum BatteryLevels
-{
-	Battery_Level_1 = 25,
-	Battery_Level_2 = 75,
-	Battery_Level_3 = 100,  // [Ace] Currently unused.
-}
-
 enum BlipType
 {
 	Blip_Hostile,
@@ -14,6 +7,13 @@ enum BlipType
 	Blip_Friendly,
 	Blip_Player,
 	Blip_FragShard
+}
+
+enum RMode
+{
+	Mode_Local = 1,
+	Mode_Movement,
+	Mode_Full
 }
 
 enum UnitType
@@ -58,6 +58,8 @@ class ZRadarMainHandler : EventHandler
 	private int BatteryPower[8];
 	private int AccumulatedDrain[8];
 
+	private transient int ArrayRefreshTics;
+
 	override void OnRegister()
 	{
 		DefaultRadarMode = CVar.GetCVar("zradar_defmode", players[consoleplayer]);
@@ -76,17 +78,17 @@ class ZRadarMainHandler : EventHandler
 		BatteryEnabled = CVar.GetCVar("zradar_battery_enable", players[consoleplayer]);
 		BatteryDrainTime = CVar.GetCVar("zradar_battery_draintime", players[consoleplayer]);
 		BatteryRechargeTime = CVar.GetCVar("zradar_battery_rechargetime", players[consoleplayer]);
-
-		BatteryPower[consoleplayer] = 100;
-		RadarMode[consoleplayer] = BatteryEnabled.GetBool() ? GetRadarMode(BatteryPower[consoleplayer]) : DefaultRadarMode.GetInt();
 	}
 
-	
-	private transient int ArrayRefreshTics;
+	override void WorldLoaded(WorldEvent e)
+	{
+		BatteryPower[consoleplayer] = 100;
+		RadarMode[consoleplayer] = DefaultRadarMode.GetInt();
+	}
 
 	override void WorldTick()
 	{
-		int DrainTime = int(35 * 60 * BatteryDrainTime.GetFloat());
+		int DrainTime = int(35 * 60 * BatteryDrainTime.GetFloat() * GetDrainMult(RadarMode[consoleplayer]));
 		int RechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
 
 		// [Ace] Battery stuff.
@@ -96,7 +98,6 @@ class ZRadarMainHandler : EventHandler
 			if (RadarMode[consoleplayer] > 0)
 			{
 				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]++ / double(DrainTime)) * 100);
-				RadarMode[consoleplayer] = GetRadarMode(BatteryPower[consoleplayer]);
 
 				if (BatteryPower[consoleplayer] <= 0)
 				{
@@ -158,14 +159,7 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] Force radar refresh when you switch modes.
 			ArrayRefreshTics = RadarRefreshRate.GetInt();
 			
-			if (BatteryEnabled.GetBool())
-			{
-				RadarMode[e.Player] = RadarMode[e.Player] == 0 ? GetRadarMode(BatteryPower[e.Player]) : 0;
-			}
-			else
-			{
-				++RadarMode[e.Player] %= 4;
-			}
+			++RadarMode[e.Player] %= 4;
 
 			string Message = "";
 			switch (RadarMode[e.Player])
@@ -218,9 +212,9 @@ class ZRadarMainHandler : EventHandler
 			// --------------- SHARED ---------------
 
 			double Alpha = OriginalAlpha;
-			if (BatteryEnabled.GetBool() && BatteryPower[consoleplayer] < Battery_Level_2)
+			if (BatteryEnabled.GetBool())
 			{
-				double Mult = BatteryPower[consoleplayer] / double(Battery_Level_2);
+				double Mult = BatteryPower[consoleplayer] / 100.0;
 				Alpha *= max(0.35, Mult);
 			}
 
@@ -348,6 +342,18 @@ class ZRadarMainHandler : EventHandler
 	// INFORMATION
 	// ----------------------------------------------------------
 
+	private double GetDrainMult(RMode mode) const
+	{
+		switch (mode)
+		{
+			case Mode_Local: return 2.0;
+			case Mode_Movement: return 1.5;
+			case Mode_Full: return 1.0;
+		}
+
+		return 1.0;
+	}
+
 	private BlipType ClassifyActor(Actor a) const
 	{
 		if (a.GetClassName() == 'BFGNecroShard') return Blip_FragShard;
@@ -355,14 +361,6 @@ class ZRadarMainHandler : EventHandler
 		if (a.bISMONSTER) return a.bFRIENDLY ? Blip_Friendly : (a.GetSpawnHealth() >= 1000 ? Blip_PowerfulHostile : Blip_Hostile);
 		
 		return -1;
-	}
-
-	private int GetRadarMode(int power) const
-	{
-		     if (power < Battery_Level_1) return 1;
-		else if (power < Battery_Level_2) return 2;
-		
-		return 3;
 	}
 
 	private ui vector2, int GetPositionData(int position) const

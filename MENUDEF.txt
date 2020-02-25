@@ -27,11 +27,9 @@ OptionMenu "ZRadar"
 	Slider "Drain Time (Minutes)", "zradar_battery_draintime", 0.50, 60, 0.5, 1
 	Slider "Recharge Time (Minutes)", "zradar_battery_rechargetime", 0.50, 60, 0.5, 1
 	StaticText ""
-	StaticText "Enabling the battery allows for a more immersive experience.", "White"
-	StaticText "Modes are handled automatically and the radar will weaken as battery is drained.", "White"
-	StaticText "At near-full power, you scan everything.", "Green"
-	StaticText "Below that you only scan moving entities.", "Yellow"
-	StaticText "When power gets too low, you only scan using line-of-sight", "Red"
+	StaticText "Enabling the battery allows for a more immersive experience.", "DarkGray"
+	StaticText "More powerful modes drain more power. The Drain Time option is for Full mode.", "White"
+	StaticText "Movement mode gives you 50% more time, Local - 100%", "White"
 	StaticText "As you lose power, the radar will begin to lose opacity.", "White"
 	StaticText "Turn off the radar to charge it.", "Fire"
 }
