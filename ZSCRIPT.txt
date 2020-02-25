@@ -155,6 +155,9 @@ class ZRadarMainHandler : EventHandler
 	{
 		if (e.Name ~== "ChangeRadarMode")
 		{
+			// [Ace] Force radar refresh when you switch modes.
+			ArrayRefreshTics = RadarRefreshRate.GetInt();
+			
 			if (BatteryEnabled.GetBool())
 			{
 				RadarMode[e.Player] = RadarMode[e.Player] == 0 ? GetRadarMode(BatteryPower[e.Player]) : 0;
