@@ -104,7 +104,7 @@ class ZRadarMainHandler : EventHandler
 					let plr = players[consoleplayer].mo;
 					if (plr)
 					{
-						plr.A_Print("\c[Orange]Scanner Deactivated");
+						plr.A_Print("\c[Orange]Scanner Deactivated\c-", 1);
 						plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 					}
 				}
@@ -118,7 +118,7 @@ class ZRadarMainHandler : EventHandler
 				let plr = players[consoleplayer].mo;
 				if (plr && BatteryPower[consoleplayer] == 100)
 				{
-					plr.A_Print("\c[Cyan]Scanner fully charged!");
+					plr.A_Print("\c[Cyan]Scanner fully charged!\c-", 2);
 					plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 				}
 			}
@@ -170,16 +170,16 @@ class ZRadarMainHandler : EventHandler
 			string Message = "";
 			switch (RadarMode[e.Player])
 			{
-				case 0: Message = "\c[Orange]Scanner Deactivated"; break;
-				case 1: Message = "\c[Red]Local Scanner Activated"; break;
-				case 2: Message = "\c[Yellow]Movement Scanner Activated"; break;
-				case 3: Message = "\c[Green]Full Scanner Activated"; break;
+				case 0: Message = "\c[Orange]Scanner Deactivated\c-"; break;
+				case 1: Message = "\c[Red]Local Scanner Activated\c-"; break;
+				case 2: Message = "\c[Yellow]Movement Scanner Activated\c-"; break;
+				case 3: Message = "\c[Green]Full Scanner Activated\c-"; break;
 			}
 
 			let plr = players[e.Player].mo;
 			if (plr)
 			{
-				plr.A_Print(Message);
+				plr.A_Print(Message, 1);
 				plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 			}
 		}
