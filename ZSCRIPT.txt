@@ -11,9 +11,10 @@ enum BlipType
 
 enum RMode
 {
-	Mode_Local = 1,
+	Mode_Disabled,
+	Mode_Full,
 	Mode_Movement,
-	Mode_Full
+	Mode_Local
 }
 
 enum UnitType
@@ -95,13 +96,13 @@ class ZRadarMainHandler : EventHandler
 		if (BatteryEnabled.GetBool())
 		{
 			// [Ace] Draining.
-			if (RadarMode[consoleplayer] > 0)
+			if (RadarMode[consoleplayer] > Mode_Disabled)
 			{
 				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]++ / double(DrainTime)) * 100);
 
 				if (BatteryPower[consoleplayer] <= 0)
 				{
-					RadarMode[consoleplayer] = 0;
+					RadarMode[consoleplayer] = Mode_Disabled;
 					let plr = players[consoleplayer].mo;
 					if (plr)
 					{
@@ -112,7 +113,7 @@ class ZRadarMainHandler : EventHandler
 			}
 
 			// [Ace] Recharging.
-			else if (RadarMode[consoleplayer] == 0 && BatteryPower[consoleplayer] < 100)
+			else if (RadarMode[consoleplayer] == Mode_Disabled && BatteryPower[consoleplayer] < 100)
 			{
 				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]-- / double(DrainTime)) * 100);
 
@@ -126,7 +127,7 @@ class ZRadarMainHandler : EventHandler
 		}
 
 		// [Ace] This is where enemies are updated.
-		if (RadarMode[consoleplayer] > 0 && ArrayRefreshTics++ >= RadarRefreshRate.GetInt())
+		if (RadarMode[consoleplayer] > Mode_Disabled && ArrayRefreshTics++ >= RadarRefreshRate.GetInt())
 		{
 			RadarBlips.Clear();
 
@@ -136,7 +137,7 @@ class ZRadarMainHandler : EventHandler
 				BlipType Type = ClassifyActor(it.Thing);
 				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) - it.Thing.Radius + it.Thing.vel.length() > RadarDistance.GetInt()) continue;
 
-				if (RadarMode[consoleplayer] == 1 && players[consoleplayer].mo.CheckSight(it.Thing) || RadarMode[consoleplayer] == 2 && (it.Thing.vel.length() > 0 || it.Thing.target || it.Thing.master && it.Thing.master && it.Thing.master is "PlayerPawn") || RadarMode[consoleplayer] == 3 || Type >= Blip_Player)
+				if (RadarMode[consoleplayer] == Mode_Local && players[consoleplayer].mo.CheckSight(it.Thing) || RadarMode[consoleplayer] == Mode_Movement && (it.Thing.vel.length() > 0 || it.Thing.target || it.Thing.master && it.Thing.master && it.Thing.master is "PlayerPawn") || RadarMode[consoleplayer] == Mode_Full || Type >= Blip_Player)
 				{
 					let Blip = new("RadarBlip");
 					Blip.Type = Type;
@@ -164,10 +165,10 @@ class ZRadarMainHandler : EventHandler
 			string Message = "";
 			switch (RadarMode[e.Player])
 			{
-				case 0: Message = "\c[Orange]Scanner Deactivated\c-"; break;
-				case 1: Message = "\c[Red]Local Scanner Activated\c-"; break;
-				case 2: Message = "\c[Yellow]Movement Scanner Activated\c-"; break;
-				case 3: Message = "\c[Green]Full Scanner Activated\c-"; break;
+				case Mode_Disabled: Message = "\c[Orange]Scanner Deactivated\c-"; break;
+				case Mode_Full: Message = "\c[Green]Full Scanner Activated\c-"; break;
+				case Mode_Movement: Message = "\c[Yellow]Movement Scanner Activated\c-"; break;
+				case Mode_Local: Message = "\c[Red]Local Scanner Activated\c-"; break;	
 			}
 
 			let plr = players[e.Player].mo;
@@ -204,7 +205,7 @@ class ZRadarMainHandler : EventHandler
 		int Position = RadarPosition.GetInt();
 		int RefreshRate = RadarRefreshRate.GetInt();
 
-		if (RadarMode[consoleplayer] > 0)
+		if (RadarMode[consoleplayer] > Mode_Disabled)
 		{
 			StatusBar.SetSize(StatusBar.RelTop, int(640 / Scale), int(480 / Scale));
 			StatusBar.BeginHUD(1.0, true);
@@ -276,9 +277,9 @@ class ZRadarMainHandler : EventHandler
 			int CrossColor = 0;
 			switch (RadarMode[consoleplayer])
 			{
-				case 1: CrossColor = Font.CR_RED; break;
-				case 2: CrossColor = Font.CR_YELLOW; break;
-				case 3: CrossColor = Font.CR_GREEN; break;
+				case Mode_Local: CrossColor = Font.CR_RED; break;
+				case Mode_Movement: CrossColor = Font.CR_YELLOW; break;
+				case Mode_Full: CrossColor = Font.CR_GREEN; break;
 			}
 			StatusBar.DrawString(mMainFont, "+", (RadarPos.x - 4, RadarPos.y - 4), DrawFlags, CrossColor, Alpha);
 

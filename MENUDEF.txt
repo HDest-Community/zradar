@@ -10,7 +10,7 @@ OptionMenu "ZRadar"
 	Control "Change Radar Mode", "ChangeMode"
 	Option "Default Radar Mode", "zradar_defmode", "RadarModes"
 	StaticText "The cross in the center indicates the current mode.", "White"
-	StaticText "Red - Local, Yellow - Movement, Green - Full", "White"
+	StaticText "Green - Full, Yellow - Movement, Red - Local", "White"
 	StaticText ""
 	Option "Position", "zradar_position", "RadarPosition"
 	Slider "Scale", "zradar_scale", 0.1, 3.0, 0.1, 1
@@ -37,9 +37,9 @@ OptionMenu "ZRadar"
 OptionValue "RadarModes"
 {
 	0, "Disabled"
-	1, "Local"
+	1, "Full"
 	2, "Movement"
-	3, "Full"
+	3, "Local"
 }
 
 OptionValue "RadarPosition"
