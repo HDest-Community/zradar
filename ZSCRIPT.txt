@@ -89,6 +89,8 @@ class ZRadarMainHandler : EventHandler
 
 	override void WorldTick()
 	{
+		if (GameState != GS_LEVEL) return;
+
 		int DrainTime = int(35 * 60 * BatteryDrainTime.GetFloat() * GetDrainMult(RadarMode[consoleplayer]));
 		int RechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
 
@@ -195,6 +197,8 @@ class ZRadarMainHandler : EventHandler
 
 	override void RenderUnderlay(RenderEvent e)
 	{
+		if (GameState != GS_LEVEL) return;
+		
 		mMainFont = HUDFont.Create(FontName);
 
 		int OriginalWidth = StatusBar.HorizontalResolution;
