@@ -197,7 +197,7 @@ class ZRadarMainHandler : EventHandler
 
 	override void RenderUnderlay(RenderEvent e)
 	{
-		if (GameState != GS_LEVEL) return;
+		if (GameState != GS_LEVEL || AutomapActive) return;
 		
 		mMainFont = HUDFont.Create(FontName);
 
