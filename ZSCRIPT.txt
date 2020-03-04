@@ -211,8 +211,8 @@ class ZRadarMainHandler : EventHandler
 
 		if (RadarMode[consoleplayer] > Mode_Disabled)
 		{
-			StatusBar.SetSize(StatusBar.RelTop, int(640 / Scale), int(480 / Scale));
 			StatusBar.BeginHUD(1.0, true);
+			StatusBar.SetSize(StatusBar.RelTop, int(640 / Scale), int(480 / Scale));
 
 			// --------------- SHARED ---------------
 
@@ -299,8 +299,8 @@ class ZRadarMainHandler : EventHandler
 
 			// --------------- PRETEND WE WERE NEVER HERE ---------------
 
-			StatusBar.SetSize(StatusBar.RelTop, OriginalWidth, OriginalHeight);
 			StatusBar.BeginHUD(1.0, false);
+			StatusBar.SetSize(StatusBar.RelTop, OriginalWidth, OriginalHeight);
 		}
 	}
 
