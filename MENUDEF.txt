@@ -12,6 +12,7 @@ OptionMenu "ZRadar"
 	StaticText "The cross in the center indicates the current mode.", "White"
 	StaticText "Green - Full, Yellow - Movement, Red - Local", "White"
 	StaticText ""
+	Option "Draw Over HUD", "zradar_drawoverhud", "YesNo"
 	Option "Position", "zradar_position", "RadarPosition"
 	Slider "Scale", "zradar_scale", 0.1, 3.0, 0.1, 1
 	Slider "Opacity", "zradar_opacity", 0.05, 1.0, 0.05, 2

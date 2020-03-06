@@ -39,6 +39,7 @@ class ZRadarMainHandler : EventHandler
 
 	private transient CVar DefaultRadarMode;
 
+	private transient CVar RadarDrawOverHud;
 	private transient CVar RadarPosition;
 	private transient CVar RadarScale;
 	private transient CVar RadarOpacity;
@@ -65,6 +66,7 @@ class ZRadarMainHandler : EventHandler
 	{
 		DefaultRadarMode = CVar.GetCVar("zradar_defmode", players[consoleplayer]);
 
+		RadarDrawOverHud = CVar.GetCVar("zradar_drawoverhud", players[consoleplayer]);
 		RadarPosition = CVar.GetCVar("zradar_position", players[consoleplayer]);
 		RadarScale = CVar.GetCVar("zradar_scale", players[consoleplayer]);
 		RadarOpacity = CVar.GetCVar("zradar_opacity", players[consoleplayer]);
@@ -196,6 +198,22 @@ class ZRadarMainHandler : EventHandler
 	private transient ui int CircleUpdateTics;
 
 	override void RenderUnderlay(RenderEvent e)
+	{
+		if (!RadarDrawOverHud.GetBool())
+		{
+			DrawRadar();
+		}
+	}
+
+	override void RenderOverlay(RenderEvent e)
+	{
+		if (RadarDrawOverHud.GetBool())
+		{
+			DrawRadar();
+		}
+	}
+
+	private ui void DrawRadar()
 	{
 		if (GameState != GS_LEVEL || AutomapActive) return;
 		
