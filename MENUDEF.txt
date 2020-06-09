@@ -1,13 +1,14 @@
 AddOptionMenu "OptionsMenu"
 {
-	Submenu "ZRadar Options", "ZRadar"
+	Submenu "ZRadar Options", "ZRadarOptions"
 }
 
-OptionMenu "ZRadar"
+OptionMenu "ZRadarOptions"
 {
-	Title  "Radar Options"
+	Title "ZRadar Options"
 	StaticText " "
 	Control "Change Radar Mode", "ChangeMode"
+	Option "Radar Selection Mode", "zradar_selectionmode", "RadarSelection"
 	Option "Default Radar Mode", "zradar_defmode", "RadarModes"
 	StaticText "The cross in the center indicates the current mode.", "White"
 	StaticText "Green - Full, Yellow - Movement, Red - Local", "White"
@@ -42,6 +43,15 @@ OptionValue "RadarModes"
 	2, "Movement"
 	3, "Local"
 }
+
+OptionValue "RadarSelection"
+{
+	-1, "Cycle"
+	1, "Full"
+	2, "Movement"
+	3, "Local"
+}
+
 
 OptionValue "RadarPosition"
 {

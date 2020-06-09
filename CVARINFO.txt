@@ -1,4 +1,5 @@
 user int zradar_defmode = 2;
+user int zradar_selectionmode = 2;
 
 user bool zradar_drawoverhud = false;
 user int zradar_position = 1;

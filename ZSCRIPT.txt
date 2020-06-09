@@ -38,6 +38,7 @@ class ZRadarMainHandler : EventHandler
 	// ----------------------------------------------------------
 
 	private transient CVar DefaultRadarMode;
+	private transient CVar RadarSelectionMode;
 
 	private transient CVar RadarDrawOverHud;
 	private transient CVar RadarPosition;
@@ -65,6 +66,7 @@ class ZRadarMainHandler : EventHandler
 	override void OnRegister()
 	{
 		DefaultRadarMode = CVar.GetCVar("zradar_defmode", players[consoleplayer]);
+		RadarSelectionMode = CVar.GetCVar("zradar_selectionmode", players[consoleplayer]);
 
 		RadarDrawOverHud = CVar.GetCVar("zradar_drawoverhud", players[consoleplayer]);
 		RadarPosition = CVar.GetCVar("zradar_position", players[consoleplayer]);
@@ -163,8 +165,19 @@ class ZRadarMainHandler : EventHandler
 		{
 			// [Ace] Force radar refresh when you switch modes.
 			ArrayRefreshTics = RadarRefreshRate.GetInt();
+			int SelMode = RadarSelectionMode.GetInt();
 			
-			++RadarMode[e.Player] %= 4;
+			// [Ace] Cycle modes.
+			if (SelMode == -1)
+			{
+				++RadarMode[e.Player] %= 4;
+			}
+
+			// [Ace] Or toggle between disabled and the selected mode.
+			else
+			{
+				RadarMode[e.Player] = RadarMode[e.Player] == SelMode ? 0 : SelMode;
+			}
 
 			string Message = "";
 			switch (RadarMode[e.Player])
