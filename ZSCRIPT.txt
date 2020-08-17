@@ -48,10 +48,12 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarRangeUnits;
 	private transient CVar RadarRangeDivisions;
 	private transient CVar RadarFrameTics;
-	private transient CVar RadarRefreshSound;
 
 	private transient CVar RadarDistance;
 	private transient CVar RadarRefreshRate;
+
+	private transient CVar RadarRefreshSound;
+	private transient CVar RadarRefreshSoundVolume;
 
 	private transient CVar BatteryEnabled;
 	private transient CVar BatteryDrainTime;
@@ -77,10 +79,12 @@ class ZRadarMainHandler : EventHandler
 		RadarRangeUnits = CVar.GetCVar("zradar_rangeunits", players[consoleplayer]);
 		RadarRangeDivisions = CVar.GetCVar("zradar_rangedivisions", players[consoleplayer]);
 		RadarFrameTics = CVar.GetCVar("zradar_frametics", players[consoleplayer]);
-		RadarRefreshSound = CVar.GetCVar("zradar_RefreshSound", players[consoleplayer]);
 
 		RadarDistance = CVar.GetCVar("zradar_distance", players[consoleplayer]);
 		RadarRefreshRate = CVar.GetCVar("zradar_refreshrate", players[consoleplayer]);
+
+		RadarRefreshSound = CVar.GetCVar("zradar_refreshsound", players[consoleplayer]);
+		RadarRefreshSoundVolume = CVar.GetCVar("zradar_refreshsoundvolume", players[consoleplayer]);
 		
 		BatteryEnabled = CVar.GetCVar("zradar_battery_enable", players[consoleplayer]);
 		BatteryDrainTime = CVar.GetCVar("zradar_battery_draintime", players[consoleplayer]);
@@ -159,7 +163,7 @@ class ZRadarMainHandler : EventHandler
 				int RefreshSound = RadarRefreshSound.GetInt();
 				if (plr && RefreshRate >= 15 && RefreshSound > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
 				{
-					plr.A_StartSound("Radar/RefreshSound"..RefreshSound, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
+					plr.A_StartSound("Radar/RefreshSound"..RefreshSound, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RadarRefreshSoundVolume.GetFloat());
 				}
 			}
 

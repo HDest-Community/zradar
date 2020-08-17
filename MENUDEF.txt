@@ -26,7 +26,9 @@ OptionMenu "ZRadarOptions"
 	StaticText ""
 	Slider "Scan Distance", "zradar_distance", 250, 3000, 50, 0
 	Option "Refresh Rate", "zradar_refreshrate", "RadarRefreshRate"
+	StaticText ""
 	Option "Refresh Sound", "zradar_refreshsound", "RadarRefreshSound"
+	Slider "Refresh Sound Volume", "zradar_refreshsoundvolume", 0, 1, 0.05, 2
 	StaticText ""
 	Option "Enable Battery", "zradar_battery_enable", "YesNo"
 	Slider "Drain Time (Minutes)", "zradar_battery_draintime", 0.50, 60, 0.5, 1
