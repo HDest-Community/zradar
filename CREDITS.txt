@@ -14,3 +14,6 @@ Caligari87
 
 Saegiru
 - Ultimate DoomVisor from which I took the original radar. Almost nothing is left from that.
+
+AvP
+- Some of the radar refresh sounds.

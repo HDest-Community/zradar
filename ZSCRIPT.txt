@@ -48,6 +48,7 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarRangeUnits;
 	private transient CVar RadarRangeDivisions;
 	private transient CVar RadarFrameTics;
+	private transient CVar RadarRefreshSound;
 
 	private transient CVar RadarDistance;
 	private transient CVar RadarRefreshRate;
@@ -76,6 +77,7 @@ class ZRadarMainHandler : EventHandler
 		RadarRangeUnits = CVar.GetCVar("zradar_rangeunits", players[consoleplayer]);
 		RadarRangeDivisions = CVar.GetCVar("zradar_rangedivisions", players[consoleplayer]);
 		RadarFrameTics = CVar.GetCVar("zradar_frametics", players[consoleplayer]);
+		RadarRefreshSound = CVar.GetCVar("zradar_RefreshSound", players[consoleplayer]);
 
 		RadarDistance = CVar.GetCVar("zradar_distance", players[consoleplayer]);
 		RadarRefreshRate = CVar.GetCVar("zradar_refreshrate", players[consoleplayer]);
@@ -97,6 +99,8 @@ class ZRadarMainHandler : EventHandler
 
 		int DrainTime = int(35 * 60 * BatteryDrainTime.GetFloat() * GetDrainMult(RadarMode[consoleplayer]));
 		int RechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
+		int RefreshRate = RadarRefreshRate.GetInt();
+		let plr = players[consoleplayer].mo;
 
 		// [Ace] Battery stuff.
 		if (BatteryEnabled.GetBool())
@@ -109,11 +113,10 @@ class ZRadarMainHandler : EventHandler
 				if (BatteryPower[consoleplayer] <= 0)
 				{
 					RadarMode[consoleplayer] = Mode_Disabled;
-					let plr = players[consoleplayer].mo;
 					if (plr)
 					{
 						plr.A_Print("\c[Orange]Scanner Deactivated\c-", 1);
-						plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
+						plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 					}
 				}
 			}
@@ -123,17 +126,16 @@ class ZRadarMainHandler : EventHandler
 			{
 				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]-- / double(DrainTime)) * 100);
 
-				let plr = players[consoleplayer].mo;
 				if (plr && BatteryPower[consoleplayer] == 100)
 				{
 					plr.A_Print("\c[Cyan]Scanner fully charged!\c-", 2);
-					plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
+					plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 				}
 			}
 		}
 
 		// [Ace] This is where enemies are updated.
-		if (RadarMode[consoleplayer] > Mode_Disabled && ArrayRefreshTics++ >= RadarRefreshRate.GetInt())
+		if (RadarMode[consoleplayer] > Mode_Disabled && ArrayRefreshTics++ >= RefreshRate)
 		{
 			RadarBlips.Clear();
 
@@ -152,6 +154,12 @@ class ZRadarMainHandler : EventHandler
 					Blip.PlayerAngle = players[consoleplayer].mo.Angle;
 
 					RadarBlips.Push(Blip);
+				}
+
+				int RefreshSound = RadarRefreshSound.GetInt();
+				if (plr && RefreshRate >= 15 && RefreshSound > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
+				{
+					plr.A_StartSound("Radar/RefreshSound"..RefreshSound, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 				}
 			}
 
@@ -192,7 +200,7 @@ class ZRadarMainHandler : EventHandler
 			if (plr)
 			{
 				plr.A_Print(Message, 1);
-				plr.A_StartSound("GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
+				plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 			}
 		}
 	}

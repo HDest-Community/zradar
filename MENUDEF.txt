@@ -26,6 +26,7 @@ OptionMenu "ZRadarOptions"
 	StaticText ""
 	Slider "Scan Distance", "zradar_distance", 250, 3000, 50, 0
 	Option "Refresh Rate", "zradar_refreshrate", "RadarRefreshRate"
+	Option "Refresh Sound", "zradar_refreshsound", "RadarRefreshSound"
 	StaticText ""
 	Option "Enable Battery", "zradar_battery_enable", "YesNo"
 	Slider "Drain Time (Minutes)", "zradar_battery_draintime", 0.50, 60, 0.5, 1
@@ -54,7 +55,6 @@ OptionValue "RadarSelection"
 	3, "Local"
 }
 
-
 OptionValue "RadarPosition"
 {
 	0, "Top Left"
@@ -82,4 +82,11 @@ OptionValue "RangeUnits"
 	0, "Disabled"
 	1, "Map Units"
 	2, "Hideous Destructor Meters"
+}
+
+OptionValue "RadarRefreshSound"
+{
+	0, "Disabled"
+	1, "AvP Beep 1"
+	2, "AvP Beep 2"
 }
