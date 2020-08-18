@@ -52,7 +52,8 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarDistance;
 	private transient CVar RadarRefreshRate;
 
-	private transient CVar RadarRefreshSound;
+	private transient CVar RadarRefreshSoundContact;
+	private transient CVar RadarRefreshSoundClear;
 	private transient CVar RadarRefreshSoundVolume;
 
 	private transient CVar BatteryEnabled;
@@ -83,7 +84,8 @@ class ZRadarMainHandler : EventHandler
 		RadarDistance = CVar.GetCVar("zradar_distance", players[consoleplayer]);
 		RadarRefreshRate = CVar.GetCVar("zradar_refreshrate", players[consoleplayer]);
 
-		RadarRefreshSound = CVar.GetCVar("zradar_refreshsound", players[consoleplayer]);
+		RadarRefreshSoundContact = CVar.GetCVar("zradar_refreshsound_contact", players[consoleplayer]);
+		RadarRefreshSoundClear = CVar.GetCVar("zradar_refreshsound_clear", players[consoleplayer]);
 		RadarRefreshSoundVolume = CVar.GetCVar("zradar_refreshsoundvolume", players[consoleplayer]);
 		
 		BatteryEnabled = CVar.GetCVar("zradar_battery_enable", players[consoleplayer]);
@@ -159,12 +161,14 @@ class ZRadarMainHandler : EventHandler
 
 					RadarBlips.Push(Blip);
 				}
+			}
 
-				int RefreshSound = RadarRefreshSound.GetInt();
-				if (plr && RefreshRate >= 15 && RefreshSound > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
-				{
-					plr.A_StartSound("Radar/RefreshSound"..RefreshSound, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RadarRefreshSoundVolume.GetFloat());
-				}
+			int RefreshSoundContact = RadarRefreshSoundContact.GetInt();
+			int RefreshSoundClear = RadarRefreshSoundClear.GetInt();
+			if (plr && RefreshRate >= 15 && RefreshSoundContact > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
+			{
+				string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..RefreshSoundContact : "Radar/RefreshSound/Clear"..RefreshSoundClear;
+				plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RadarRefreshSoundVolume.GetFloat());
 			}
 
 			ArrayRefreshTics = 0;
@@ -410,6 +414,21 @@ class ZRadarMainHandler : EventHandler
 		if (a.bISMONSTER) return a.bFRIENDLY ? Blip_Friendly : (a.GetSpawnHealth() >= 1000 ? Blip_PowerfulHostile : Blip_Hostile);
 		
 		return -1;
+	}
+
+	private int GetHostileBlipCount() const
+	{
+		int HostileBlips = 0;
+
+		for (int i = 0; i < RadarBlips.Size(); ++i)
+		{
+			if (RadarBlips[i].Type == Blip_Hostile || RadarBlips[i].Type == Blip_PowerfulHostile)
+			{
+				HostileBlips++;
+			}
+		}
+
+		return HostileBlips;
 	}
 
 	private ui vector2, int GetPositionData(int position) const

@@ -1,4 +1,6 @@
 Radar/GenAlert GenAlert
 
-Radar/RefreshSound1 REFSND1
-Radar/RefreshSound2 REFSND2
+Radar/RefreshSound/Clear1 RFSNOC1
+
+Radar/RefreshSound/Contact1 RFSCON1
+Radar/RefreshSound/Contact2 RFSCON2

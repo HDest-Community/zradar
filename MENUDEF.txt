@@ -27,7 +27,8 @@ OptionMenu "ZRadarOptions"
 	Slider "Scan Distance", "zradar_distance", 250, 3000, 50, 0
 	Option "Refresh Rate", "zradar_refreshrate", "RadarRefreshRate"
 	StaticText ""
-	Option "Refresh Sound", "zradar_refreshsound", "RadarRefreshSound"
+	Option "Refresh Sound (Contact)", "zradar_refreshsound_contact", "RadarRefreshSoundContact"
+	Option "Refresh Sound (Clear)", "zradar_refreshsound_clear", "RadarRefreshSoundClear"
 	Slider "Refresh Sound Volume", "zradar_refreshsoundvolume", 0, 1, 0.05, 2
 	StaticText ""
 	Option "Enable Battery", "zradar_battery_enable", "YesNo"
@@ -86,9 +87,15 @@ OptionValue "RangeUnits"
 	2, "Hideous Destructor Meters"
 }
 
-OptionValue "RadarRefreshSound"
+OptionValue "RadarRefreshSoundContact"
 {
 	0, "Disabled"
-	1, "AvP Beep 1"
-	2, "AvP Beep 2"
+	1, "AvP Pulse 1"
+	2, "AvP Pulse 2"
+}
+
+OptionValue "RadarRefreshSoundClear"
+{
+	0, "Disabled"
+	1, "AvP Empty Pulse"
 }
