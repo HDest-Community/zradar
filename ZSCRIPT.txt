@@ -3,6 +3,7 @@ version 4.0
 enum BlipType
 {
 	Blip_Hostile,
+	Blip_StrongHostile,
 	Blip_PowerfulHostile,
 	Blip_Friendly,
 	Blip_Player,
@@ -151,7 +152,9 @@ class ZRadarMainHandler : EventHandler
 				BlipType Type = ClassifyActor(it.Thing);
 				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) - it.Thing.Radius + it.Thing.vel.length() > RadarDistance.GetInt()) continue;
 
-				if (RadarMode[consoleplayer] == Mode_Local && players[consoleplayer].mo.CheckSight(it.Thing) || RadarMode[consoleplayer] == Mode_Movement && (it.Thing.vel.length() > 0 || it.Thing.target || it.Thing.master && it.Thing.master && it.Thing.master is "PlayerPawn") || RadarMode[consoleplayer] == Mode_Full || Type >= Blip_Player)
+				// [Ace] I'm not too sure what e.Thing.target is for anymore. I know the master is checked for compatibility with Hideous Destructor's DERPs and HERPs.
+				// I think target is so that it shows up if it's an enemy that's acquired a player?
+				if (RadarMode[consoleplayer] == Mode_Local && players[consoleplayer].mo.CheckSight(it.Thing) || RadarMode[consoleplayer] == Mode_Movement && (it.Thing.vel.length() > 0 || it.Thing.target || it.Thing.master is "PlayerPawn") || RadarMode[consoleplayer] == Mode_Full || Type >= Blip_Player)
 				{
 					let Blip = new("RadarBlip");
 					Blip.Type = Type;
@@ -368,24 +371,22 @@ class ZRadarMainHandler : EventHandler
 		switch (blip.Type)
 		{
 			case Blip_Hostile:
-				BlipImage = dif.z <= -60 ? "REDBELOW" : (dif.z >= 60 ? "REDABOVE" : "REDDOT");
-				break;
+				BlipImage = dif.z <= -60 ? "REDBELOW" : (dif.z >= 60 ? "REDABOVE" : "REDDOT"); break;
+
+			case Blip_StrongHostile:
+				BlipImage = dif.z <= -60 ? "ORNBELOW" : (dif.z >= 60 ? "ORNABOVE" : "ORNDOT"); break;
 
 			case Blip_PowerfulHostile:
-				BlipImage = dif.z <= -60 ? "GLDBELOW" : (dif.z >= 60 ? "GLDABOVE" : "GLDDOT");
-				break;
+				BlipImage = dif.z <= -60 ? "GLDBELOW" : (dif.z >= 60 ? "GLDABOVE" : "GLDDOT"); break;
 
 			case Blip_Friendly:
-				BlipImage = dif.z <= -60 ? "CYNBELOW" : (dif.z >= 60 ? "CYNABOVE" : "CYNDOT");
-				break;
+				BlipImage = dif.z <= -60 ? "CYNBELOW" : (dif.z >= 60 ? "CYNABOVE" : "CYNDOT"); break;
 
 			case Blip_Player:
-				BlipImage = dif.z <= -60 ? "GRNBELOW" : (dif.z >= 60 ? "GRNABOVE" : "GRNDOT");
-				break;
+				BlipImage = dif.z <= -60 ? "GRNBELOW" : (dif.z >= 60 ? "GRNABOVE" : "GRNDOT"); break;
 
 			case Blip_FragShard:
-				BlipImage = "FRAGSHRD";
-				break;
+				BlipImage = "FRAGSHRD"; break;
 		}
 		
 		StatusBar.DrawImage(BlipImage, (dy, dx), flags, alpha);
@@ -411,7 +412,29 @@ class ZRadarMainHandler : EventHandler
 	{
 		if (a.GetClassName() == 'BFGNecroShard') return Blip_FragShard;
 		if (a is "PlayerPawn") return Blip_Player;
-		if (a.bISMONSTER) return a.bFRIENDLY ? Blip_Friendly : (a.GetSpawnHealth() >= 1000 ? Blip_PowerfulHostile : Blip_Hostile);
+		if (a.bISMONSTER)
+		{
+			if (a.bFRIENDLY)
+			{
+				return Blip_Friendly;
+			}
+			else
+			{
+				int SpawnHealth = a.GetSpawnHealth();
+				if (SpawnHealth < 400)
+				{
+					return Blip_Hostile;
+				}
+				else if (SpawnHealth < 1000)
+				{
+					return Blip_StrongHostile;
+				}
+				else
+				{
+					return Blip_PowerfulHostile;
+				}
+			}
+		}
 		
 		return -1;
 	}
@@ -422,7 +445,7 @@ class ZRadarMainHandler : EventHandler
 
 		for (int i = 0; i < RadarBlips.Size(); ++i)
 		{
-			if (RadarBlips[i].Type == Blip_Hostile || RadarBlips[i].Type == Blip_PowerfulHostile)
+			if (RadarBlips[i].Type == Blip_Hostile || RadarBlips[i].Type == Blip_StrongHostile || RadarBlips[i].Type == Blip_PowerfulHostile)
 			{
 				HostileBlips++;
 			}
