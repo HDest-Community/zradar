@@ -25,6 +25,7 @@ OptionMenu "ZRadarOptions"
 	Slider "Sweep Delay (Tics)", "zradar_frametics", 1, 20, 1, 0
 	StaticText ""
 	Slider "Scan Distance", "zradar_distance", 250, 3000, 50, 0
+	Slider "Angle Limit", "zradar_anglelimit", 45, 360, 45, 0
 	Option "Refresh Rate", "zradar_refreshrate", "RadarRefreshRate"
 	StaticText ""
 	Option "Refresh Sound (Contact)", "zradar_refreshsound_contact", "RadarRefreshSoundContact"

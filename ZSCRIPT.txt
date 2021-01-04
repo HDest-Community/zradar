@@ -39,23 +39,24 @@ class ZRadarMainHandler : EventHandler
 	// ----------------------------------------------------------
 
 	private transient CVar DefaultRadarMode;
-	private transient CVar RadarSelectionMode;
+	private transient CVar SelectionMode;
 
-	private transient CVar RadarDrawOverHud;
-	private transient CVar RadarPosition;
-	private transient CVar RadarScale;
-	private transient CVar RadarOpacity;
+	private transient CVar DrawOverHud;
+	private transient CVar Position;
+	private transient CVar Scale;
+	private transient CVar Opacity;
 	private transient CVar RadarColor;
-	private transient CVar RadarRangeUnits;
-	private transient CVar RadarRangeDivisions;
-	private transient CVar RadarFrameTics;
+	private transient CVar RangeUnits;
+	private transient CVar RangeDivisions;
+	private transient CVar FrameTics;
 
-	private transient CVar RadarDistance;
-	private transient CVar RadarRefreshRate;
+	private transient CVar ScanDistance;
+	private transient CVar AngleLimit;
+	private transient CVar RefreshRate;
 
-	private transient CVar RadarRefreshSoundContact;
-	private transient CVar RadarRefreshSoundClear;
-	private transient CVar RadarRefreshSoundVolume;
+	private transient CVar RefreshSoundContact;
+	private transient CVar RefreshSoundClear;
+	private transient CVar RefreshSoundVolume;
 
 	private transient CVar BatteryEnabled;
 	private transient CVar BatteryDrainTime;
@@ -77,27 +78,28 @@ class ZRadarMainHandler : EventHandler
 	override void OnRegister()
 	{
 		DefaultRadarMode = CVar.GetCVar("zradar_defmode", players[consoleplayer]);
-		RadarSelectionMode = CVar.GetCVar("zradar_selectionmode", players[consoleplayer]);
+		SelectionMode = CVar.GetCVar("zradar_selectionmode", players[consoleplayer]);
 
-		RadarDrawOverHud = CVar.GetCVar("zradar_drawoverhud", players[consoleplayer]);
-		RadarPosition = CVar.GetCVar("zradar_position", players[consoleplayer]);
-		RadarScale = CVar.GetCVar("zradar_scale", players[consoleplayer]);
-		RadarOpacity = CVar.GetCVar("zradar_opacity", players[consoleplayer]);
+		DrawOverHud = CVar.GetCVar("zradar_drawoverhud", players[consoleplayer]);
+		Position = CVar.GetCVar("zradar_position", players[consoleplayer]);
+		Scale = CVar.GetCVar("zradar_scale", players[consoleplayer]);
+		Opacity = CVar.GetCVar("zradar_opacity", players[consoleplayer]);
 		RadarColor = CVar.GetCVar("zradar_color", players[consoleplayer]);
-		RadarRangeUnits = CVar.GetCVar("zradar_rangeunits", players[consoleplayer]);
-		RadarRangeDivisions = CVar.GetCVar("zradar_rangedivisions", players[consoleplayer]);
-		RadarFrameTics = CVar.GetCVar("zradar_frametics", players[consoleplayer]);
+		RangeUnits = CVar.GetCVar("zradar_rangeunits", players[consoleplayer]);
+		RangeDivisions = CVar.GetCVar("zradar_rangedivisions", players[consoleplayer]);
+		FrameTics = CVar.GetCVar("zradar_frametics", players[consoleplayer]);
 
-		RadarDistance = CVar.GetCVar("zradar_distance", players[consoleplayer]);
-		RadarRefreshRate = CVar.GetCVar("zradar_refreshrate", players[consoleplayer]);
+		ScanDistance = CVar.GetCVar("zradar_distance");
+		AngleLimit = CVar.GetCVar("zradar_anglelimit");
+		RefreshRate = CVar.GetCVar("zradar_refreshrate");
 
-		RadarRefreshSoundContact = CVar.GetCVar("zradar_refreshsound_contact", players[consoleplayer]);
-		RadarRefreshSoundClear = CVar.GetCVar("zradar_refreshsound_clear", players[consoleplayer]);
-		RadarRefreshSoundVolume = CVar.GetCVar("zradar_refreshsoundvolume", players[consoleplayer]);
+		RefreshSoundContact = CVar.GetCVar("zradar_refreshsound_contact", players[consoleplayer]);
+		RefreshSoundClear = CVar.GetCVar("zradar_refreshsound_clear", players[consoleplayer]);
+		RefreshSoundVolume = CVar.GetCVar("zradar_refreshsoundvolume", players[consoleplayer]);
 		
-		BatteryEnabled = CVar.GetCVar("zradar_battery_enable", players[consoleplayer]);
-		BatteryDrainTime = CVar.GetCVar("zradar_battery_draintime", players[consoleplayer]);
-		BatteryRechargeTime = CVar.GetCVar("zradar_battery_rechargetime", players[consoleplayer]);
+		BatteryEnabled = CVar.GetCVar("zradar_battery_enable");
+		BatteryDrainTime = CVar.GetCVar("zradar_battery_draintime");
+		BatteryRechargeTime = CVar.GetCVar("zradar_battery_rechargetime");
 	}
 
 	override void WorldLoaded(WorldEvent e)
@@ -112,8 +114,13 @@ class ZRadarMainHandler : EventHandler
 
 		int DrainTime = int(35 * 60 * BatteryDrainTime.GetFloat() * GetDrainMult(RadarMode[consoleplayer]));
 		int RechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
-		int RefreshRate = RadarRefreshRate.GetInt();
+		int RefRate = RefreshRate.GetInt();
 		let plr = players[consoleplayer].mo;
+
+		if (!plr)
+		{
+			return;
+		}
 
 		if (!CheckRadarCondition(plr))
 		{
@@ -149,23 +156,29 @@ class ZRadarMainHandler : EventHandler
 		}
 
 		// [Ace] This is where enemies are updated.
-		if (RadarMode[consoleplayer] > Mode_Disabled && ArrayRefreshTics++ >= RefreshRate)
+		if (RadarMode[consoleplayer] > Mode_Disabled && ArrayRefreshTics++ >= RefRate)
 		{
 			RadarBlips.Clear();
 
-			BlockThingsIterator it = BlockThingsIterator.Create(players[consoleplayer].mo, RadarDistance.GetInt());
+			BlockThingsIterator it = BlockThingsIterator.Create(plr, ScanDistance.GetInt());
 			while (it.Next())
 			{
-				BlipType Type = ClassifyActor(it.Thing);
-				if (Type == -1 || it.Thing == players[consoleplayer].mo || it.Thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.Thing) - it.Thing.Radius + it.Thing.vel.length() > RadarDistance.GetInt()) continue;
+				BlipType Type = ClassifyActor(it.thing);
+				if (Type == -1 || it.thing == players[consoleplayer].mo || it.thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.thing) - it.thing.Radius + it.thing.vel.length() > ScanDistance.GetInt())
+				{
+					continue;
+				}
+
+				int Angle = Actor.AbsAngle(plr.AngleTo(it.thing), plr.Angle);
+				bool IsWithinScanAngle = Angle <= max(45, AngleLimit.GetInt()) / 2;
 
 				// [Ace] I'm not too sure what e.Thing.target is for anymore. I know the master is checked for compatibility with Hideous Destructor's DERPs and HERPs.
 				// I think target is so that it shows up if it's an enemy that's acquired a player?
-				if (RadarMode[consoleplayer] == Mode_Local && players[consoleplayer].mo.CheckSight(it.Thing) || RadarMode[consoleplayer] == Mode_Movement && (it.Thing.vel.length() > 0 || it.Thing.target || it.Thing.master is "PlayerPawn") || RadarMode[consoleplayer] == Mode_Full || Type >= Blip_Player)
+				if (IsWithinScanAngle && (RadarMode[consoleplayer] == Mode_Local && players[consoleplayer].mo.CheckSight(it.thing) || RadarMode[consoleplayer] == Mode_Movement && (it.thing.vel.length() > 0 || it.thing.target || it.thing.master is "PlayerPawn") || RadarMode[consoleplayer] == Mode_Full || Type >= Blip_Player))
 				{
 					let Blip = new("RadarBlip");
 					Blip.Type = Type;
-					Blip.TargetPos = it.Thing.pos;
+					Blip.TargetPos = it.thing.pos;
 					Blip.PlayerPos = players[consoleplayer].mo.pos;
 					Blip.PlayerAngle = players[consoleplayer].mo.Angle;
 
@@ -173,12 +186,12 @@ class ZRadarMainHandler : EventHandler
 				}
 			}
 
-			int RefreshSoundContact = RadarRefreshSoundContact.GetInt();
-			int RefreshSoundClear = RadarRefreshSoundClear.GetInt();
-			if (plr && RefreshRate >= 15 && RefreshSoundContact > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
+			int RefSoundContact = RefreshSoundContact.GetInt();
+			int RefSoundClear = RefreshSoundClear.GetInt();
+			if (plr && RefRate >= 15 && RefSoundContact > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
 			{
-				string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..RefreshSoundContact : "Radar/RefreshSound/Clear"..RefreshSoundClear;
-				plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RadarRefreshSoundVolume.GetFloat());
+				string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..RefSoundContact : "Radar/RefreshSound/Clear"..RefSoundClear;
+				plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RefreshSoundVolume.GetFloat());
 			}
 
 			ArrayRefreshTics = 0;
@@ -190,8 +203,8 @@ class ZRadarMainHandler : EventHandler
 		if (e.Name ~== "ChangeRadarMode")
 		{
 			// [Ace] Force radar refresh when you switch modes.
-			ArrayRefreshTics = RadarRefreshRate.GetInt();
-			int SelMode = RadarSelectionMode.GetInt();
+			ArrayRefreshTics = RefreshRate.GetInt();
+			int SelMode = SelectionMode.GetInt();
 			
 			// [Ace] Cycle modes.
 			if (SelMode == -1)
@@ -248,7 +261,7 @@ class ZRadarMainHandler : EventHandler
 
 	override void RenderUnderlay(RenderEvent e)
 	{
-		if (!RadarDrawOverHud.GetBool())
+		if (!DrawOverHud.GetBool())
 		{
 			DrawRadar();
 		}
@@ -256,7 +269,7 @@ class ZRadarMainHandler : EventHandler
 
 	override void RenderOverlay(RenderEvent e)
 	{
-		if (RadarDrawOverHud.GetBool())
+		if (DrawOverHud.GetBool())
 		{
 			DrawRadar();
 		}
@@ -271,15 +284,15 @@ class ZRadarMainHandler : EventHandler
 		int OriginalWidth = StatusBar.HorizontalResolution;
 		int OriginalHeight = StatusBar.VerticalResolution;
 
-		double OriginalAlpha = RadarOpacity.GetFloat();
-		double Scale = RadarScale.GetFloat();
-		int Position = RadarPosition.GetInt();
-		int RefreshRate = RadarRefreshRate.GetInt();
+		double OriginalAlpha = Opacity.GetFloat();
+		double RScale = Scale.GetFloat();
+		int RPosition = Position.GetInt();
+		int RefreshRate = RefreshRate.GetInt();
 
 		if (RadarMode[consoleplayer] > Mode_Disabled)
 		{
 			StatusBar.BeginHUD(1.0, true);
-			StatusBar.SetSize(StatusBar.RelTop, int(640 / Scale), int(480 / Scale));
+			StatusBar.SetSize(StatusBar.RelTop, int(640 / RScale), int(480 / RScale));
 
 			// --------------- SHARED ---------------
 
@@ -292,7 +305,7 @@ class ZRadarMainHandler : EventHandler
 
 			// --------------- CIRCLE ---------------
 
-			if (CircleUpdateTics++ >= RadarFrameTics.GetInt())
+			if (CircleUpdateTics++ >= FrameTics.GetInt())
 			{
 				Frame++;
 				Frame %= RadarFrames + 1;
@@ -302,7 +315,7 @@ class ZRadarMainHandler : EventHandler
 
 			int RadCol = RadarColor.GetInt();
 			vector2 RadarPos; int DrawFlags;
-			[RadarPos, DrawFlags] = GetPositionData(Position);
+			[RadarPos, DrawFlags] = GetPositionData(RPosition);
 
 			// [Ace] Main.
 			StatusBar.DrawImage("R"..RadCol.."MAIN", RadarPos, DrawFlags, Alpha);
@@ -313,8 +326,8 @@ class ZRadarMainHandler : EventHandler
 			StatusBar.DrawImage("R"..RadCol.."SCAN", RadarPos, DrawFlags, Alpha, scale: ScanScale);
 
 			// [Ace] Range circles.
-			int RangeUnits = RadarRangeUnits.GetInt();
-			if (RangeUnits > 0)
+			int RUnits = RangeUnits.GetInt();
+			if (RUnits > 0)
 			{
 				int RangeColor = 0;
 				switch (RadCol)
@@ -323,23 +336,23 @@ class ZRadarMainHandler : EventHandler
 					case 1: RangeColor = Font.CR_GREEN; break;
 				}
 
-				int RangeDivisions = RadarRangeDivisions.GetInt();
-				for (int i = 1; i <= RangeDivisions; ++i)
+				int RDiv = RangeDivisions.GetInt();
+				for (int i = 1; i <= RDiv; ++i)
 				{
 					string RangeString = "";
-					switch (RangeUnits)
+					switch (RUnits)
 					{
-						case Unit_MapUnit: RangeString = StatusBar.FormatNumber(int(RadarDistance.GetInt() / double(RangeDivisions) * i), 1, 4); break;
-						case Unit_HDMeter: RangeString = StatusBar.FormatNumber(int(RadarDistance.GetInt() / double(RangeDivisions) / 42.0 * i), 1, 3).."m"; break;
+						case Unit_MapUnit: RangeString = StatusBar.FormatNumber(int(ScanDistance.GetInt() / double(RDiv) * i), 1, 4); break;
+						case Unit_HDMeter: RangeString = StatusBar.FormatNumber(int(ScanDistance.GetInt() / double(RDiv) / 42.0 * i), 1, 3).."m"; break;
 					}
 
 					// [Ace] Circle.
-					vector2 RangeCircleScale = (1.0, 1.0);
-					RangeCircleScale *= i / double(RangeDivisions);
-					StatusBar.DrawImage("R"..RadCol.."RANGE", RadarPos, DrawFlags, Alpha * 0.60, scale: RangeCircleScale);
+					vector2 CircleScale = (1.0, 1.0);
+					CircleScale *= i / double(RDiv);
+					StatusBar.DrawImage("R"..RadCol.."RANGE", RadarPos, DrawFlags, Alpha * 0.60, scale: CircleScale);
 
 					// [Ace] Number.
-					StatusBar.DrawString(mMainFont, RangeString, (RadarPos.x - 1, RadarPos.y + 2 - 60 / RangeDivisions * i), DrawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, RangeColor, Alpha * 0.60);
+					StatusBar.DrawString(mMainFont, RangeString, (RadarPos.x - 1, RadarPos.y + 2 - 60 / RDiv * i), DrawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, RangeColor, Alpha * 0.60);
 				}
 			}
 
@@ -360,7 +373,7 @@ class ZRadarMainHandler : EventHandler
 
 			for (int i = 0; i < RadarBlips.Size(); ++i)
 			{
-				double Scale = 17 * (RadarDistance.GetInt() / 1000.0);
+				double Scale = 17 * (ScanDistance.GetInt() / 1000.0);
 				DrawBlip(StatusBar, RadarBlips[i], RadarPos, DrawFlags, Scale, Alpha);
 			}
 

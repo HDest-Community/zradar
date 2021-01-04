@@ -10,13 +10,14 @@ user int zradar_rangeunits = 1;
 user int zradar_rangedivisions = 3;
 user int zradar_frametics = 9;
 
-user int zradar_distance = 1000;
-user int zradar_refreshrate = 1;
+server int zradar_distance = 1000;
+server int zradar_anglelimit = 360;
+server int zradar_refreshrate = 1;
 
 user int zradar_refreshsound_contact = 0;
 user int zradar_refreshsound_clear = 0;
 user float zradar_refreshsoundvolume = 1.0;
 
-user bool zradar_battery_enable = false;
-user float zradar_battery_draintime = 5;
-user float zradar_battery_rechargetime = 10;
+server bool zradar_battery_enable = false;
+server float zradar_battery_draintime = 5;
+server float zradar_battery_rechargetime = 10;
