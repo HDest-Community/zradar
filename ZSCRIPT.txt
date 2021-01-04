@@ -1,4 +1,4 @@
-version 4.0
+version "4.0"
 
 enum BlipType
 {
@@ -62,11 +62,17 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar BatteryRechargeTime;
 
 	private transient Array<RadarBlip> RadarBlips;
-	private int RadarMode[8];
+	private int RadarMode[8]; // [Ace] This should have been called RadarState.
 	private int BatteryPower[8];
 	private int AccumulatedDrain[8];
 
 	private transient int ArrayRefreshTics;
+
+	static void DestroyMainHandler()
+	{
+		let Handler = EventHandler.Find("ZRadarMainHandler");
+		Handler.Destroy();
+	}
 
 	override void OnRegister()
 	{
@@ -97,7 +103,7 @@ class ZRadarMainHandler : EventHandler
 	override void WorldLoaded(WorldEvent e)
 	{
 		BatteryPower[consoleplayer] = 100;
-		RadarMode[consoleplayer] = DefaultRadarMode.GetInt();
+		SetRadarMode(consoleplayer, DefaultRadarMode.GetInt(), true);
 	}
 
 	override void WorldTick()
@@ -109,6 +115,12 @@ class ZRadarMainHandler : EventHandler
 		int RefreshRate = RadarRefreshRate.GetInt();
 		let plr = players[consoleplayer].mo;
 
+		if (!CheckRadarCondition(plr))
+		{
+			SetRadarMode(consoleplayer, Mode_Disabled);
+			return;
+		}
+
 		// [Ace] Battery stuff.
 		if (BatteryEnabled.GetBool())
 		{
@@ -119,12 +131,7 @@ class ZRadarMainHandler : EventHandler
 
 				if (BatteryPower[consoleplayer] <= 0)
 				{
-					RadarMode[consoleplayer] = Mode_Disabled;
-					if (plr)
-					{
-						plr.A_Print("\c[Orange]Scanner Deactivated\c-", 1);
-						plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
-					}
+					SetRadarMode(consoleplayer, Mode_Disabled);
 				}
 			}
 
@@ -189,17 +196,31 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] Cycle modes.
 			if (SelMode == -1)
 			{
-				++RadarMode[e.Player] %= 4;
+				SetRadarMode(e.Player, (RadarMode[e.Player] + 1) % 4);
 			}
 
 			// [Ace] Or toggle between disabled and the selected mode.
 			else
 			{
-				RadarMode[e.Player] = RadarMode[e.Player] == SelMode ? 0 : SelMode;
+				SetRadarMode(e.Player, RadarMode[e.Player] == SelMode ? 0 : SelMode);
 			}
+		}
+	}
 
+	private void SetRadarMode(int plrIndex, int mode, bool silent = false)
+	{
+		let plr = players[plrIndex].mo;
+		if (!plr || RadarMode[plrIndex] == Mode_Disabled && mode > Mode_Disabled && !CheckRadarCondition(plr) || RadarMode[plrIndex] == mode)
+		{
+			return;
+		}
+
+		RadarMode[plrIndex] = mode;
+
+		if (!silent)
+		{
 			string Message = "";
-			switch (RadarMode[e.Player])
+			switch (mode)
 			{
 				case Mode_Disabled: Message = "\c[Orange]Scanner Deactivated\c-"; break;
 				case Mode_Full: Message = "\c[Green]Full Scanner Activated\c-"; break;
@@ -207,12 +228,8 @@ class ZRadarMainHandler : EventHandler
 				case Mode_Local: Message = "\c[Red]Local Scanner Activated\c-"; break;	
 			}
 
-			let plr = players[e.Player].mo;
-			if (plr)
-			{
-				plr.A_Print(Message, 1);
-				plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
-			}
+			plr.A_Print(Message, 1);
+			plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 		}
 	}
 
@@ -395,6 +412,8 @@ class ZRadarMainHandler : EventHandler
 	// ----------------------------------------------------------
 	// INFORMATION
 	// ----------------------------------------------------------
+
+	protected virtual bool CheckRadarCondition(PlayerPawn plr) { return true; }
 
 	private double GetDrainMult(RMode mode) const
 	{
