@@ -471,7 +471,7 @@ class ZRadarMainHandler : EventHandler
 		return -1;
 	}
 
-	private int GetHostileBlipCount() const
+	private int GetHostileBlipCount()
 	{
 		int HostileBlips = 0;
 
@@ -486,7 +486,7 @@ class ZRadarMainHandler : EventHandler
 		return HostileBlips;
 	}
 
-	private ui vector2, int GetPositionData(int position) const
+	private ui vector2, int GetPositionData(int position)
 	{
 		vector2 pos; int flags;
 		switch (position)
