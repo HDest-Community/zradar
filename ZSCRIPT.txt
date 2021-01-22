@@ -72,7 +72,10 @@ class ZRadarMainHandler : EventHandler
 	static void DestroyMainHandler()
 	{
 		let Handler = EventHandler.Find("ZRadarMainHandler");
-		Handler.Destroy();
+		if (Handler)
+		{
+			Handler.Destroy();
+		}
 	}
 
 	override void OnRegister()
