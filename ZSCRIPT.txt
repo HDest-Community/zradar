@@ -172,7 +172,7 @@ class ZRadarMainHandler : EventHandler
 					continue;
 				}
 
-				int Angle = Actor.AbsAngle(plr.AngleTo(it.thing), plr.Angle);
+				double Angle = Actor.AbsAngle(plr.AngleTo(it.thing), plr.Angle);
 				bool IsWithinScanAngle = Angle <= max(45, AngleLimit.GetInt()) / 2;
 
 				// [Ace] I'm not too sure what e.Thing.target is for anymore. I know the master is checked for compatibility with Hideous Destructor's DERPs and HERPs.
@@ -431,7 +431,12 @@ class ZRadarMainHandler : EventHandler
 
 	protected virtual clearscope bool CheckRadarCondition(PlayerPawn plr) { return true; }
 
-	private double GetDrainMult(RMode mode) const
+	clearscope int GetRadarMode()
+	{
+		return RadarMode[consoleplayer];
+	}
+
+	double GetDrainMult(RMode mode) const
 	{
 		switch (mode)
 		{
