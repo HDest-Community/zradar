@@ -148,7 +148,7 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] Recharging.
 			else if (RadarMode[consoleplayer] == Mode_Disabled && BatteryPower[consoleplayer] < 100)
 			{
-				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]-- / double(DrainTime)) * 100);
+				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]-- / double(RechargeTime)) * 100);
 
 				if (plr && BatteryPower[consoleplayer] == 100)
 				{
@@ -429,7 +429,7 @@ class ZRadarMainHandler : EventHandler
 	// INFORMATION
 	// ----------------------------------------------------------
 
-	protected virtual bool CheckRadarCondition(PlayerPawn plr) { return true; }
+	protected virtual clearscope bool CheckRadarCondition(PlayerPawn plr) { return true; }
 
 	private double GetDrainMult(RMode mode) const
 	{
@@ -474,7 +474,7 @@ class ZRadarMainHandler : EventHandler
 		return -1;
 	}
 
-	private int GetHostileBlipCount()
+	private clearscope int GetHostileBlipCount()
 	{
 		int HostileBlips = 0;
 
@@ -489,7 +489,7 @@ class ZRadarMainHandler : EventHandler
 		return HostileBlips;
 	}
 
-	private ui vector2, int GetPositionData(int position)
+	private ui vector2, int GetPositionData(int position) const
 	{
 		vector2 pos; int flags;
 		switch (position)
