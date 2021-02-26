@@ -287,7 +287,6 @@ class ZRadarMainHandler : EventHandler
 		int OriginalWidth = StatusBar.HorizontalResolution;
 		int OriginalHeight = StatusBar.VerticalResolution;
 
-		double OriginalAlpha = Opacity.GetFloat();
 		double RScale = Scale.GetFloat();
 		int RPosition = Position.GetInt();
 		int RefreshRate = RefreshRate.GetInt();
@@ -299,12 +298,7 @@ class ZRadarMainHandler : EventHandler
 
 			// --------------- SHARED ---------------
 
-			double Alpha = OriginalAlpha;
-			if (BatteryEnabled.GetBool())
-			{
-				double Mult = BatteryPower[consoleplayer] / 100.0;
-				Alpha *= max(0.35, Mult);
-			}
+			double Alpha = GetAlpha();
 
 			// --------------- CIRCLE ---------------
 
@@ -429,6 +423,16 @@ class ZRadarMainHandler : EventHandler
 	// INFORMATION
 	// ----------------------------------------------------------
 
+	protected virtual ui double GetAlpha()
+	{
+		double Alpha = Opacity.GetFloat();
+		if (BatteryEnabled.GetBool())
+		{
+			double Mult = BatteryPower[consoleplayer] / 100.0;
+			Alpha *= max(0.35, Mult);
+		}
+		return Alpha;
+	}
 	protected virtual clearscope bool CheckRadarCondition(PlayerPawn plr) { return true; }
 
 	clearscope int GetRadarMode()
