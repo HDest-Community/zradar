@@ -16,7 +16,14 @@ OptionMenu "ZRadarOptions"
 	StaticText "The default mode is what the radar would switch to on new maps.", "White"
 	StaticText ""
 	Option "Draw Over HUD", "zradar_drawoverhud", "YesNo"
-	Option "Position", "zradar_position", "RadarPosition"
+	StaticText ""
+	Slider "Offset X", "zradar_offset_x", -500, 500, 5, 0
+	Slider "Offset Y", "zradar_offset_y", -500, 500, 5, 0
+	StaticText "The radar is positioned in different parts of the screen depending on the number.", "White"
+	StaticText "For X: Positive - left. Negative - right.", "White"
+	StaticText "For Y: Positive - top. Negative - bottom.", "White"
+	StaticText "0 is center. Console is recommended for fine-tuning.", "White"
+	StaticText ""
 	Slider "Scale", "zradar_scale", 0.1, 3.0, 0.1, 1
 	Slider "Opacity", "zradar_opacity", 0.05, 1.0, 0.05, 2
 	Option "Color", "zradar_color", "RadarColor"

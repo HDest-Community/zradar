@@ -2,7 +2,8 @@ user int zradar_defmode = 2;
 user int zradar_selectionmode = 2;
 
 user bool zradar_drawoverhud = false;
-user int zradar_position = 1;
+user int zradar_offset_x = -65;
+user int zradar_offset_y = 65;
 user float zradar_scale = 1.0;
 user float zradar_opacity = 0.5;
 user int zradar_color = 0;

@@ -42,7 +42,8 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar SelectionMode;
 
 	private transient CVar DrawOverHud;
-	private transient CVar Position;
+	private transient CVar OffsetX;
+	private transient CVar OffsetY;
 	private transient CVar Scale;
 	private transient CVar Opacity;
 	private transient CVar RadarColor;
@@ -84,7 +85,8 @@ class ZRadarMainHandler : EventHandler
 		SelectionMode = CVar.GetCVar("zradar_selectionmode", players[consoleplayer]);
 
 		DrawOverHud = CVar.GetCVar("zradar_drawoverhud", players[consoleplayer]);
-		Position = CVar.GetCVar("zradar_position", players[consoleplayer]);
+		OffsetX = CVar.GetCVar("zradar_offset_x", players[consoleplayer]);
+		OffsetY = CVar.GetCVar("zradar_offset_y", players[consoleplayer]);
 		Scale = CVar.GetCVar("zradar_scale", players[consoleplayer]);
 		Opacity = CVar.GetCVar("zradar_opacity", players[consoleplayer]);
 		RadarColor = CVar.GetCVar("zradar_color", players[consoleplayer]);
@@ -288,7 +290,6 @@ class ZRadarMainHandler : EventHandler
 		int OriginalHeight = StatusBar.VerticalResolution;
 
 		double RScale = Scale.GetFloat();
-		int RPosition = Position.GetInt();
 		int RefreshRate = RefreshRate.GetInt();
 
 		if (RadarMode[consoleplayer] > Mode_Disabled)
@@ -311,8 +312,9 @@ class ZRadarMainHandler : EventHandler
 			}
 
 			int RadCol = RadarColor.GetInt();
-			vector2 RadarPos; int DrawFlags;
-			[RadarPos, DrawFlags] = GetPositionData(RPosition);
+			vector2 RadarPos = (OffsetX.GetInt(), OffsetY.GetInt());
+			int DrawFlags = GetAlignmentFlags(RadarPos);
+			DrawFlags |= StatusBar.DI_ITEM_CENTER;
 
 			// [Ace] Main.
 			StatusBar.DrawImage("R"..RadCol.."MAIN", RadarPos, DrawFlags, Alpha);
@@ -498,29 +500,35 @@ class ZRadarMainHandler : EventHandler
 		return HostileBlips;
 	}
 
-	private ui vector2, int GetPositionData(int position) const
+	private ui int GetAlignmentFlags(vector2 offsets) const
 	{
-		vector2 pos; int flags;
-		switch (position)
+		int AlignFlags = 0;
+		if (offsets.x > 0)
 		{
-			case 0:
-				flags = BaseStatusBar.DI_SCREEN_LEFT_TOP | BaseStatusBar.DI_ITEM_CENTER;
-				pos = (65, 65);
-				break;
-			case 1:
-				flags = BaseStatusBar.DI_SCREEN_RIGHT_TOP | BaseStatusBar.DI_ITEM_CENTER;
-				pos = (-65, 65);
-				break;
-			case 2:
-				flags = BaseStatusBar.DI_SCREEN_LEFT_BOTTOM | BaseStatusBar.DI_ITEM_CENTER;
-				pos = (65, -65);
-				break;
-			case 3:
-				flags = BaseStatusBar.DI_SCREEN_RIGHT_BOTTOM | BaseStatusBar.DI_ITEM_CENTER;
-				pos = (-65, -65);
-				break;
+			AlignFlags |= StatusBar.DI_SCREEN_LEFT;
+		}
+		else if (offsets.x < 0)
+		{
+			AlignFlags |= StatusBar.DI_SCREEN_RIGHT;
+		}
+		else
+		{
+			AlignFlags |= StatusBar.DI_SCREEN_HCENTER;
 		}
 
-		return pos, flags;
+		if (offsets.y > 0)
+		{
+			AlignFlags |= StatusBar.DI_SCREEN_TOP;
+		}
+		else if (offsets.y < 0)
+		{
+			AlignFlags |= StatusBar.DI_SCREEN_BOTTOM;
+		}
+		else
+		{
+			AlignFlags |= StatusBar.DI_SCREEN_VCENTER;
+		}
+		
+		return AlignFlags;
 	}
 }
