@@ -280,6 +280,17 @@ class ZRadarMainHandler : EventHandler
 		}
 	}
 
+	override void UiTick()
+	{
+		if (CircleUpdateTics++ >= FrameTics.GetInt())
+		{
+			Frame++;
+			Frame %= RadarFrames + 1;
+
+			CircleUpdateTics = 0;
+		}
+	}
+
 	private ui void DrawRadar()
 	{
 		if (GameState != GS_LEVEL || AutomapActive) return;
@@ -302,14 +313,6 @@ class ZRadarMainHandler : EventHandler
 			double Alpha = GetAlpha();
 
 			// --------------- CIRCLE ---------------
-
-			if (CircleUpdateTics++ >= FrameTics.GetInt())
-			{
-				Frame++;
-				Frame %= RadarFrames + 1;
-
-				CircleUpdateTics = 0;
-			}
 
 			int RadCol = RadarColor.GetInt();
 			vector2 RadarPos = (OffsetX.GetInt(), OffsetY.GetInt());
