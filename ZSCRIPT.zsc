@@ -540,7 +540,7 @@ class ZRadarMainHandler : EventHandler
 		}
 		if (valid & 64)
 		{
-			/// [Ace] When it comes to HD, only display HDMagAmmo items. This is because loose ammo counts as HDAmmo which will absolutely DESTROY performance.
+			/// [Ace] When it comes to HD, only display HDMagAmmo items. This is because loose ammo counts as Ammo which will absolutely DESTROY performance.
 			Name hdmagstr = 'HDMagAmmo';
 			class<Actor> hdmagcls = hdmagstr;
 			if (hdmagcls && a is hdmagcls || !hdmagcls && a is 'Ammo')

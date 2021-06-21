@@ -15,7 +15,7 @@ server int zradar_distance = 1000;
 server int zradar_anglelimit = 360;
 server int zradar_refreshrate = 1;
 
-server int zradar_validactors = 1023;
+server int zradar_validactors = 2147483647;
 
 user int zradar_refreshsound_contact = 0;
 user int zradar_refreshsound_clear = 0;
