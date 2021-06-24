@@ -338,28 +338,28 @@ class ZRadarMainHandler : EventHandler
 			int units = RangeUnits.GetInt();
 			if (units > 0)
 			{
-				int RangeColor = 0;
+				int rangeCol = 0;
 				switch (radCol)
 				{
-					case 0: RangeColor = Font.CR_LIGHTBLUE; break;
-					case 1: RangeColor = Font.CR_GREEN; break;
+					case 0: rangeCol = Font.CR_LIGHTBLUE; break;
+					case 1: rangeCol = Font.CR_GREEN; break;
 				}
 
 				int divisions = RangeDivisions.GetInt();
 				for (int i = 1; i <= divisions; ++i)
 				{
-					string RangeString = "";
+					string str = "";
 					switch (units)
 					{
-						case 1: RangeString = StatusBar.FormatNumber(int(scanDist / double(divisions) * i), 1, 4); break;
-						case 2: RangeString = StatusBar.FormatNumber(int(scanDist / double(divisions) / 42.0 * i), 1, 3).."m"; break;
+						case 1: str = StatusBar.FormatNumber(int(scanDist / double(divisions) * i), 1, 4); break;
+						case 2: str = StatusBar.FormatNumber(int(scanDist / double(divisions) / 42.0 * i), 1, 3).."m"; break;
 					}
 
 					// [Ace] Circle.
-					StatusBar.DrawImage("R"..radCol.."RANGE", radarPos, drawFlags, alpha * 0.60, (1.0, 1.0) * (i / double(divisions)));
+					StatusBar.DrawImage("R"..radCol.."RANGE", radarPos, drawFlags, alpha * 0.60, scale: (1.0, 1.0) * (i / double(divisions)));
 
 					// [Ace] Number.
-					StatusBar.DrawString(mMainFont, RangeString, (radarPos.x - 1, radarPos.y + 2 - 60 / divisions * i), drawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, RangeColor, alpha * 0.60);
+					StatusBar.DrawString(mMainFont, str, (radarPos.x - 1, radarPos.y + 2 - 60 / divisions * i), drawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, rangeCol, alpha * 0.60);
 				}
 			}
 
