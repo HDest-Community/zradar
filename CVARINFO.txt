@@ -9,7 +9,6 @@ user float zradar_opacity = 0.5;
 user int zradar_color = 0;
 user int zradar_rangeunits = 1;
 user int zradar_rangedivisions = 3;
-user int zradar_frametics = 9;
 
 server int zradar_distance = 1000;
 server int zradar_anglelimit = 360;

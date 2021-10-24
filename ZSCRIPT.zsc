@@ -50,7 +50,6 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarColor;
 	private transient CVar RangeUnits;
 	private transient CVar RangeDivisions;
-	private transient CVar FrameTics;
 
 	private transient CVar ScanDistance;
 	private transient CVar AngleLimit;
@@ -95,7 +94,6 @@ class ZRadarMainHandler : EventHandler
 		RadarColor = CVar.GetCVar('zradar_color', players[consoleplayer]);
 		RangeUnits = CVar.GetCVar('zradar_rangeunits', players[consoleplayer]);
 		RangeDivisions = CVar.GetCVar('zradar_rangedivisions', players[consoleplayer]);
-		FrameTics = CVar.GetCVar('zradar_frametics', players[consoleplayer]);
 
 		ScanDistance = CVar.GetCVar('zradar_distance');
 		AngleLimit = CVar.GetCVar('zradar_anglelimit');
@@ -124,7 +122,7 @@ class ZRadarMainHandler : EventHandler
 
 		int DrainTime = int(35 * 60 * BatteryDrainTime.GetFloat() * GetDrainMult(RadarMode[consoleplayer]));
 		int RechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
-		int RefRate = RefreshRate.GetInt();
+		int refRate = RefreshRate.GetInt();
 		let plr = players[consoleplayer].mo;
 
 		if (!plr)
@@ -166,7 +164,7 @@ class ZRadarMainHandler : EventHandler
 		}
 
 		// [Ace] This is where enemies are updated.
-		if (RadarMode[consoleplayer] > Mode_Disabled && ArrayRefreshTics++ >= RefRate)
+		if (RadarMode[consoleplayer] > Mode_Disabled && ArrayRefreshTics++ >= refRate)
 		{
 			RadarBlips.Clear();
 
@@ -199,7 +197,7 @@ class ZRadarMainHandler : EventHandler
 
 			int RefSoundContact = RefreshSoundContact.GetInt();
 			int RefSoundClear = RefreshSoundClear.GetInt();
-			if (plr && RefRate >= 15 && RefSoundContact > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
+			if (plr && refRate >= 15 && RefSoundContact > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
 			{
 				string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..RefSoundContact : "Radar/RefreshSound/Clear"..RefSoundClear;
 				plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RefreshSoundVolume.GetFloat());
@@ -261,14 +259,9 @@ class ZRadarMainHandler : EventHandler
 	// UI
 	// ----------------------------------------------------------
 
-	const RadarFrames = 12;
-
 	const FontName = "ZRDRFONT";
 
 	private transient ui HUDFont mMainFont;
-
-	private transient ui int Frame;
-	private transient ui int CircleUpdateTics;
 
 	override void RenderUnderlay(RenderEvent e)
 	{
@@ -283,17 +276,6 @@ class ZRadarMainHandler : EventHandler
 		if (DrawOverHud.GetBool())
 		{
 			DrawRadar();
-		}
-	}
-
-	override void UiTick()
-	{
-		if (CircleUpdateTics++ >= FrameTics.GetInt())
-		{
-			Frame++;
-			Frame %= RadarFrames + 1;
-
-			CircleUpdateTics = 0;
 		}
 	}
 
@@ -330,9 +312,12 @@ class ZRadarMainHandler : EventHandler
 			StatusBar.DrawImage("R"..radCol.."MAIN", radarPos, drawFlags, alpha);
 
 			// [Ace] Scan circle.
-			vector2 scanScale = (1.0, 1.0);
-			scanScale *= Frame / double(RadarFrames);
-			StatusBar.DrawImage("R"..radCol.."SCAN", radarPos, drawFlags, alpha, scale: scanScale);
+			if (refRate > 1)
+			{
+				vector2 scanScale = (1.0, 1.0);
+				scanScale *= ArrayRefreshTics / double(refRate);
+				StatusBar.DrawImage("R"..radCol.."SCAN", radarPos, drawFlags, alpha, scale: scanScale);
+			}
 
 			// [Ace] Range circles.
 			int units = RangeUnits.GetInt();
@@ -376,7 +361,7 @@ class ZRadarMainHandler : EventHandler
 
 			// --------------- BLIPS N STUFF ---------------
 
-			alpha *= RefRate > 1 ? 1.0 - ArrayRefreshTics / double(RefRate) : 1.0;
+			alpha *= refRate > 1 ? 1.0 - ArrayRefreshTics / double(refRate) : 1.0;
 			double scale = 17 * (scanDist / 1000.0);
 			for (int i = 0; i < RadarBlips.Size(); ++i)
 			{
