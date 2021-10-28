@@ -34,16 +34,24 @@ OptionMenu "ZRadarOptions"
 	Slider "Angle Limit", "zradar_anglelimit", 45, 360, 45, 0
 	Option "Refresh Rate", "zradar_refreshrate", "RadarRefreshRate"
 	StaticText ""
-	FlagOption "Show Enemies", "zradar_validactors", "YesNo", 0
-	FlagOption "Show Players", "zradar_validactors", "YesNo", 1
-	FlagOption "Show Health", "zradar_validactors", "YesNo", 2
-	FlagOption "Show Armor Pickups", "zradar_validactors", "YesNo", 3
-	FlagOption "Show Armor Bonuses", "zradar_validactors", "YesNo", 4
-	FlagOption "Show Weapons", "zradar_validactors", "YesNo", 5
-	FlagOption "Show Ammo", "zradar_validactors", "YesNo", 6
-	FlagOption "Show Powerups", "zradar_validactors", "YesNo", 7
-	FlagOption "Show Countables", "zradar_validactors", "YesNo", 8
-	FlagOption "Show Frag Shards (HidDest)", "zradar_validactors", "YesNo", 9
+	FlagOption "$ZRADAR_TOGGLE_1", "zradar_validactors", "YesNo", 0
+	FlagOption "$ZRADAR_TOGGLE_2", "zradar_validactors", "YesNo", 1
+	FlagOption "$ZRADAR_TOGGLE_3", "zradar_validactors", "YesNo", 2
+	FlagOption "$ZRADAR_TOGGLE_4", "zradar_validactors", "YesNo", 3
+	FlagOption "$ZRADAR_TOGGLE_5", "zradar_validactors", "YesNo", 4
+	FlagOption "$ZRADAR_TOGGLE_6", "zradar_validactors", "YesNo", 5
+	FlagOption "$ZRADAR_TOGGLE_7", "zradar_validactors", "YesNo", 6
+	FlagOption "$ZRADAR_TOGGLE_8", "zradar_validactors", "YesNo", 7
+	FlagOption "$ZRADAR_TOGGLE_9", "zradar_validactors", "YesNo", 8
+	FlagOption "$ZRADAR_TOGGLE_10", "zradar_validactors", "YesNo", 9
+	FlagOption "$ZRADAR_TOGGLE_11", "zradar_validactors", "YesNo", 10
+	FlagOption "$ZRADAR_TOGGLE_12", "zradar_validactors", "YesNo", 11
+	FlagOption "$ZRADAR_TOGGLE_13", "zradar_validactors", "YesNo", 12
+	FlagOption "$ZRADAR_TOGGLE_14", "zradar_validactors", "YesNo", 13
+	FlagOption "$ZRADAR_TOGGLE_15", "zradar_validactors", "YesNo", 14
+	FlagOption "$ZRADAR_TOGGLE_16", "zradar_validactors", "YesNo", 15
+	FlagOption "$ZRADAR_TOGGLE_17", "zradar_validactors", "YesNo", 16
+	FlagOption "$ZRADAR_TOGGLE_18", "zradar_validactors", "YesNo", 17
 	StaticText ""
 	Option "Refresh Sound (Contact)", "zradar_refreshsound_contact", "RadarRefreshSoundContact"
 	Option "Refresh Sound (Clear)", "zradar_refreshsound_clear", "RadarRefreshSoundClear"

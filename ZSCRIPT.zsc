@@ -1,22 +1,5 @@
 version "4.5"
 
-enum BlipType
-{
-	Blip_Hostile,
-	Blip_StrongHostile,
-	Blip_PowerfulHostile,
-	Blip_Friendly,
-	Blip_Player,
-	Blip_Health,
-	Blip_ArmorPickup,
-	Blip_ArmorBonus,
-	Blip_Weapon,
-	Blip_Ammo,
-	Blip_Powerup,
-	Blip_Countable,
-	Blip_FragShard
-}
-
 enum RMode
 {
 	Mode_Disabled,
@@ -27,10 +10,32 @@ enum RMode
 
 class RadarBlip
 {
-	double PlayerAngle;
-	vector3 PlayerPos;
-	vector3 TargetPos;
-	BlipType Type;
+	vector2 DrawPos;
+	string Icon;
+	vector2 DrawBox;
+	bool IsHostile;
+
+	static RadarBlip Create(PlayerPawn plr, Actor other, string iconNormal, string iconBelow = "", string iconAbove = "", vector2 drawBox = (5, 5))
+	{
+		let blip = new('RadarBlip');
+
+		// [Ace] This is not level.Vec3Diff because then I'd have to flip the Z axis and screw that.
+		vector3 diff = (plr.pos.x - other.pos.x, plr.pos.y - other.pos.y, other.pos.z - plr.pos.z);
+
+		blip.DrawPos =
+		(
+			diff.x * cos(-plr.angle) - diff.y * sin(-plr.angle),
+			diff.x * sin(-plr.angle) + diff.y * cos(-plr.angle)
+		);
+
+		blip.DrawBox = drawBox;
+		blip.IsHostile = other.bISMONSTER && !other.bFRIENDLY;
+
+		// [Ace] Use the correct icon.
+		blip.Icon = diff.z <= -60 && iconBelow != "" ? iconBelow : (diff.z >= 60 && iconAbove != "" ? iconAbove : iconNormal);
+
+		return blip;
+	}
 }
 
 class ZRadarMainHandler : EventHandler
@@ -173,33 +178,29 @@ class ZRadarMainHandler : EventHandler
 			BlockThingsIterator it = BlockThingsIterator.Create(plr, scanDist);
 			while (it.Next())
 			{
-				BlipType type = ClassifyActor(it.thing);
-				if (type == -1 || it.thing == players[consoleplayer].mo || it.thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.thing) - it.thing.Radius + it.thing.vel.length() > scanDist)
+				if (it.thing == players[consoleplayer].mo || it.thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.thing) - it.thing.Radius + it.thing.vel.length() > scanDist)
 				{
 					continue;
 				}
 
 				double angle = Actor.AbsAngle(plr.AngleTo(it.thing), plr.Angle);
-				bool isWithinScanAngle = Angle <= max(45, angleLimit) / 2;
+				bool isWithinScanAngle = angle <= max(45, angleLimit) / 2;
 
-				// [Ace] I'm not too sure what e.Thing.target is for anymore. I know the master is checked for compatibility with Hideous Destructor's DERPs and HERPs.
-				// I think target is so that it shows up if it's an enemy that's acquired a player?
-				if (isWithinScanAngle && (type == Blip_Player || type == Blip_FragShard || RadarMode[consoleplayer] == Mode_Full || RadarMode[consoleplayer] == Mode_Movement && (it.thing.vel.length() > 0 || it.thing.target || it.thing.master is "PlayerPawn") || (RadarMode[consoleplayer] == Mode_Local && players[consoleplayer].mo.CheckSight(it.thing))))
+				if (isWithinScanAngle)
 				{
-					let Blip = new("RadarBlip");
-					Blip.type = type;
-					Blip.TargetPos = it.thing.pos;
-					Blip.PlayerPos = players[consoleplayer].mo.pos;
-					Blip.PlayerAngle = players[consoleplayer].mo.Angle;
-					RadarBlips.Push(Blip);
+					RadarBlip blip = TryMakeBlip(RadarMode[consoleplayer], ValidActors.GetInt(), players[consoleplayer].mo, it.thing);
+					if (blip)
+					{
+						RadarBlips.Push(blip);
+					}
 				}
 			}
 
-			int RefSoundContact = RefreshSoundContact.GetInt();
-			int RefSoundClear = RefreshSoundClear.GetInt();
-			if (plr && refRate >= 15 && RefSoundContact > 0) // [Ace] The > 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
+			int refSoundContact = RefreshSoundContact.GetInt();
+			int refSoundClear = RefreshSoundClear.GetInt();
+			if (plr && refRate >= 15 && RefSoundContact > 0) // [Ace] The >= 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
 			{
-				string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..RefSoundContact : "Radar/RefreshSound/Clear"..RefSoundClear;
+				string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..refSoundContact : "Radar/RefreshSound/Clear"..refSoundClear;
 				plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RefreshSoundVolume.GetFloat());
 			}
 
@@ -253,6 +254,83 @@ class ZRadarMainHandler : EventHandler
 			plr.A_Print(Message, 1);
 			plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 		}
+	}
+
+	protected virtual RadarBlip TryMakeBlip(int mode, int toggles, PlayerPawn plr, Actor other)
+	{
+		if (!plr || !other)
+		{
+			return null;
+		}
+
+		// [Ace] Pick the ones you want to check in each condition below.
+		bool full = mode == Mode_Full;
+		bool movement = mode == Mode_Movement && (other.vel.length() > 0 || other.target || other.master is 'PlayerPawn');
+		bool local = mode == Mode_Local && plr.CheckSight(other);
+
+		if (full || movement || local)
+		{
+			if (other.bISMONSTER)
+			{
+				if (toggles & 1 && !other.bFRIENDLY)
+				{
+					int SpawnHealth = other.GetSpawnHealth();
+					if (SpawnHealth < 400)
+					{
+						return RadarBlip.Create(plr, other, "REDDOT", "REDBELOW", "REDABOVE");
+					}
+					else if (SpawnHealth < 1000)
+					{
+						return RadarBlip.Create(plr, other, "ORNDOT", "ORNBELOW", "ORNABOVE");
+					}
+					else
+					{
+						return RadarBlip.Create(plr, other, "GLDDOT", "GLDBELOW", "GLDABOVE");
+					}
+				}
+				if (toggles & 1 << 1 && other.bFRIENDLY)
+				{
+					return RadarBlip.Create(plr, other, "CYNDOT", "CYNBELOW", "CYNABOVE");
+				}
+			}
+			if (toggles & 1 << 1 && other is "PlayerPawn")
+			{
+				return RadarBlip.Create(plr, other, "GRNDOT", "GRNBELOW", "GRNABOVE");
+			}
+		}
+		if (full || local)
+		{
+			if (toggles & 1 << 2 && other is 'Health')
+			{
+				return RadarBlip.Create(plr, other, "REDCROSS", drawBox: (4, 4));
+			}
+			if (toggles & 1 << 3 && other is 'BasicArmorPickup')
+			{
+				return RadarBlip.Create(plr, other, "BLUSQARE", drawBox: (3, 3));
+			}
+			if (toggles & 1 << 4 && other is 'BasicArmorBonus')
+			{
+				return RadarBlip.Create(plr, other, "GRNSQARE", drawBox: (3, 3));
+			}
+			if (toggles & 1 << 5 && other is 'Weapon')
+			{
+				return RadarBlip.Create(plr, other, "GLDSTAR");
+			}
+			if (toggles & 1 << 6 && other is 'Ammo')
+			{
+				return RadarBlip.Create(plr, other, "TANSQARE", drawBox: (3, 3));
+			}
+			if (toggles & 1 << 7 && other is 'PowerupGiver')
+			{
+				return RadarBlip.Create(plr, other, "PNKSTAR");
+			}
+			if (toggles & 1 << 8 && other.bCOUNTITEM && !(other is 'BasicArmorBonus') && !(other is 'PowerupGiver'))
+			{
+				return RadarBlip.Create(plr, other, "GLDSQARE", drawBox: (3, 3));
+			}
+		}
+		
+		return null;
 	}
 
 	// ----------------------------------------------------------
@@ -362,10 +440,18 @@ class ZRadarMainHandler : EventHandler
 			// --------------- BLIPS N STUFF ---------------
 
 			alpha *= refRate > 1 ? 1.0 - ArrayRefreshTics / double(refRate) : 1.0;
-			double scale = 17 * (scanDist / 1000.0);
+
+			// [Ace] This magic number ensures the blips scale correctly with distance.
+			double scale = scanDist / 58.82;
 			for (int i = 0; i < RadarBlips.Size(); ++i)
 			{
-				DrawBlip(StatusBar, RadarBlips[i], radarPos, drawFlags, scale, alpha);
+				RadarBlip blip = RadarBlips[i];
+
+				vector2 finalPos = blip.DrawPos;
+				finalPos /= scale;
+				finalPos += (radarPos.y, radarPos.x); // [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
+
+				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, alpha, blip.DrawBox);
 			}
 
 			// --------------- PRETEND WE WERE NEVER HERE ---------------
@@ -373,69 +459,6 @@ class ZRadarMainHandler : EventHandler
 			StatusBar.BeginHUD(1.0, false);
 			StatusBar.SetSize(StatusBar.RelTop, OriginalWidth, OriginalHeight);
 		}
-	}
-
-	private ui void DrawBlip(BaseStatusBar sbar, RadarBlip blip, vector2 drawPos, int flags, double scale, double alpha)
-	{
-		if (!blip)
-		{
-			return;
-		}
-
-		vector3 dif = (blip.PlayerPos.x - Blip.TargetPos.x, blip.PlayerPos.y - blip.TargetPos.y, blip.TargetPos.z - Blip.PlayerPos.z);
-
-		// [Ace] This part of the code (the one with the maths) is the only one that doesn't directly belong to me. I don't know what the variables are supposed to mean because they use ye olde Ken Silverman naming conventions
-		// and make fuck all sense to everyone else but the author. Name your damn variables properly! Anyway, I think the 'd' stands for "draw".
-		double dx = dif.x * cos(-Blip.PlayerAngle) - dif.y * sin(-Blip.PlayerAngle);
-		double dy = dif.x * sin(-Blip.PlayerAngle) + dif.y * cos(-Blip.PlayerAngle);
-		dx /= scale; dx += drawPos.y;
-		dy /= scale; dy += drawPos.x;
-
-		string blipImage = "";
-		vector2 drawBox = (5, 5);
-		switch (blip.Type)
-		{
-			case Blip_Hostile:
-				blipImage = dif.z <= -60 ? "REDBELOW" : (dif.z >= 60 ? "REDABOVE" : "REDDOT"); break;
-
-			case Blip_StrongHostile:
-				blipImage = dif.z <= -60 ? "ORNBELOW" : (dif.z >= 60 ? "ORNABOVE" : "ORNDOT"); break;
-
-			case Blip_PowerfulHostile:
-				blipImage = dif.z <= -60 ? "GLDBELOW" : (dif.z >= 60 ? "GLDABOVE" : "GLDDOT"); break;
-
-			case Blip_Friendly:
-				blipImage = dif.z <= -60 ? "CYNBELOW" : (dif.z >= 60 ? "CYNABOVE" : "CYNDOT"); break;
-
-			case Blip_Player:
-				blipImage = dif.z <= -60 ? "GRNBELOW" : (dif.z >= 60 ? "GRNABOVE" : "GRNDOT"); break;
-
-			case Blip_Health:
-				blipImage = "REDCROSS"; drawBox = (4, 4); break;
-
-			case Blip_ArmorPickup:
-				blipImage = "BLUSQARE"; drawBox = (3, 3); break;
-
-			case Blip_ArmorBonus:
-				blipImage = "GRNSQARE"; drawBox = (3, 3); break;
-
-			case Blip_Weapon:
-				blipImage = "GLDSTAR"; break;
-
-			case Blip_Ammo:
-				blipImage = "TANSQARE"; drawBox = (3, 3); break;
-
-			case Blip_Powerup:
-				blipImage = "PNKSTAR"; break;
-
-			case Blip_Countable:
-				blipImage = "GLDSQARE"; drawBox = (3, 3); break;
-
-			case Blip_FragShard:
-				blipImage = "GRNSTAR"; break;
-		}
-		
-		StatusBar.DrawImage(BlipImage, (dy, dx), flags, alpha, drawBox);
 	}
 
 	// ----------------------------------------------------------
@@ -471,93 +494,17 @@ class ZRadarMainHandler : EventHandler
 		return 1.0;
 	}
 
-	clearscope BlipType ClassifyActor(Actor a)
-	{
-		// [Ace] Too lazy to enum this.
-		int valid = ValidActors.GetInt();
-
-		if (valid & 512 && a.GetClassName() == 'BFGNecroShard')
-		{
-			return Blip_FragShard;
-		}
-		if (valid & 1 && a.bISMONSTER)
-		{
-			if (a.bFRIENDLY)
-			{
-				return Blip_Friendly;
-			}
-			else
-			{
-				int SpawnHealth = a.GetSpawnHealth();
-				if (SpawnHealth < 400)
-				{
-					return Blip_Hostile;
-				}
-				else if (SpawnHealth < 1000)
-				{
-					return Blip_StrongHostile;
-				}
-				else
-				{
-					return Blip_PowerfulHostile;
-				}
-			}
-		}
-		if (valid & 2 && a is "PlayerPawn")
-		{
-			return Blip_Player;
-		}
-		if (valid & 4 && a is 'Health')
-		{
-			return Blip_Health;
-		}
-		if (valid & 8 && a is 'BasicArmorPickup')
-		{
-			return Blip_ArmorPickup;
-		}
-		if (valid & 16 && a is 'BasicArmorBonus')
-		{
-			return Blip_ArmorBonus;
-		}
-		if (valid & 32 && a is 'Weapon')
-		{
-			return Blip_Weapon;
-		}
-		if (valid & 64)
-		{
-			/// [Ace] When it comes to HD, only display HDMagAmmo items. This is because loose ammo counts as Ammo which will absolutely DESTROY performance.
-			Name hdmagstr = 'HDMagAmmo';
-			class<Actor> hdmagcls = hdmagstr;
-			if (hdmagcls && a is hdmagcls || !hdmagcls && a is 'Ammo')
-			{
-				return Blip_Ammo;
-			}
-		}
-		if (valid & 128 && a is 'PowerupGiver')
-		{
-			return Blip_Powerup;
-		}
-		if (valid & 256 && a.bCOUNTITEM && !(a is 'BasicArmorBonus') && !(a is 'PowerupGiver'))
-		{
-			return Blip_Countable;
-		}
-		
-		return -1;
-	}
-
 	private clearscope int GetHostileBlipCount()
 	{
-		int HostileBlips = 0;
-
+		int blips = 0;
 		for (int i = 0; i < RadarBlips.Size(); ++i)
 		{
-			if (RadarBlips[i].Type == Blip_Hostile || RadarBlips[i].Type == Blip_StrongHostile || RadarBlips[i].Type == Blip_PowerfulHostile)
+			if (RadarBlips[i].IsHostile)
 			{
-				HostileBlips++;
+				blips++;
 			}
 		}
-
-		return HostileBlips;
+		return blips;
 	}
 
 	private ui int GetAlignmentFlags(vector2 offsets) const
