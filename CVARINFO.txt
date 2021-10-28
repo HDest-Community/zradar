@@ -11,6 +11,7 @@ user int zradar_rangeunits = 1;
 user int zradar_rangedivisions = 3;
 
 server int zradar_distance = 1000;
+server int zradar_overdistance = 1500;
 server int zradar_anglelimit = 360;
 server int zradar_refreshrate = 1;
 

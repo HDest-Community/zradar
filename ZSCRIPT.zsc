@@ -73,6 +73,7 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RangeDivisions;
 
 	private transient CVar ScanDistance;
+	private transient CVar OverscanDistance;
 	private transient CVar AngleLimit;
 	private transient CVar RefreshRate;
 
@@ -117,6 +118,7 @@ class ZRadarMainHandler : EventHandler
 		RangeDivisions = CVar.GetCVar('zradar_rangedivisions', players[consoleplayer]);
 
 		ScanDistance = CVar.GetCVar('zradar_distance');
+		OverscanDistance = CVar.GetCVar('zradar_overdistance');
 		AngleLimit = CVar.GetCVar('zradar_anglelimit');
 		RefreshRate = CVar.GetCVar('zradar_refreshrate');
 
@@ -190,7 +192,7 @@ class ZRadarMainHandler : EventHandler
 			RadarBlips.Clear();
 
 			int angleLimit = AngleLimit.GetInt();
-			int scanDist = ScanDistance.Getint();
+			int scanDist = max(ScanDistance.Getint(), OverscanDistance.GetInt());
 			BlockThingsIterator it = BlockThingsIterator.Create(plr, scanDist);
 			while (it.Next())
 			{
@@ -393,7 +395,7 @@ class ZRadarMainHandler : EventHandler
 			// --------------- SHARED ---------------
 
 			double alpha = GetAlpha();
-			int scanDist = ScanDistance.GetInt();
+			int scanDist = min(ScanDistance.GetInt(), OverscanDistance.GetInt());
 
 			// --------------- CIRCLE ---------------
 
@@ -458,14 +460,21 @@ class ZRadarMainHandler : EventHandler
 			alpha *= refRate > 1 ? 1.0 - ArrayRefreshTics / double(refRate) : 1.0;
 
 			// [Ace] This magic number ensures the blips scale correctly with distance.
-			double scale = scanDist / 58.82;
+			// I think the number is supposed to be the radar's radius minus the blip's radius.
+			double scale = scanDist / 58.60;
 			for (int i = 0; i < RadarBlips.Size(); ++i)
 			{
 				RadarBlip blip = RadarBlips[i];
 
-				vector2 finalPos = blip.DrawPos;
-				finalPos /= scale;
-				finalPos += (radarPos.y, radarPos.x); // [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
+				// [Ace] arooкas is a god. This is non-negotiable.
+				double length = blip.DrawPos.Length();
+				if (length > scanDist)
+				{
+					blip.DrawPos *= (scanDist / length);
+				}
+
+				// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
+				vector2 finalPos = (blip.DrawPos / scale) + (radarPos.y, radarPos.x);
 
 				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, alpha, blip.DrawBox, col: blip.DrawCol);
 			}
