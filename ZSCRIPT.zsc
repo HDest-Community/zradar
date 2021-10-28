@@ -1,4 +1,4 @@
-version "4.5"
+version "4.6"
 
 enum RMode
 {
@@ -10,12 +10,27 @@ enum RMode
 
 class RadarBlip
 {
+	enum BlipColors
+	{
+		Col_Red = 0xFFFF1111,
+		Col_Orange = 0xFFFFAA11,
+		Col_Gold = 0xFFFFEE00,
+		Col_Green = 0xFF11FF11,
+		Col_BlueGreen = 0xFF11FF55,
+		Col_Cyan = 0xFF11FFFF,
+		Col_Blue = 0xFF1111FF,
+		Col_Purple = 0xFF7711FF,
+		Col_Pink = 0xFFFF11FF,
+		Col_Tan = 0xFFFFF0C7
+	}
+
 	vector2 DrawPos;
 	string Icon;
+	Color DrawCol;
 	vector2 DrawBox;
 	bool IsHostile;
 
-	static RadarBlip Create(PlayerPawn plr, Actor other, string iconNormal, string iconBelow = "", string iconAbove = "", vector2 drawBox = (5, 5))
+	static RadarBlip Create(PlayerPawn plr, Actor other, string iconNormal, Color drawCol, string iconBelow = "", string iconAbove = "", vector2 drawBox = (5, 5))
 	{
 		let blip = new('RadarBlip');
 
@@ -28,6 +43,7 @@ class RadarBlip
 			diff.x * sin(-plr.angle) + diff.y * cos(-plr.angle)
 		);
 
+		blip.DrawCol = drawCol;
 		blip.DrawBox = drawBox;
 		blip.IsHostile = other.bISMONSTER && !other.bFRIENDLY;
 
@@ -277,56 +293,56 @@ class ZRadarMainHandler : EventHandler
 					int SpawnHealth = other.GetSpawnHealth();
 					if (SpawnHealth < 400)
 					{
-						return RadarBlip.Create(plr, other, "REDDOT", "REDBELOW", "REDABOVE");
+						return RadarBlip.Create(plr, other, "BLPDOT", RadarBlip.Col_Red, "BLPBELOW", "BLPABOVE");
 					}
 					else if (SpawnHealth < 1000)
 					{
-						return RadarBlip.Create(plr, other, "ORNDOT", "ORNBELOW", "ORNABOVE");
+						return RadarBlip.Create(plr, other, "BLPDOT", RadarBlip.Col_Orange, "BLPBELOW", "BLPABOVE");
 					}
 					else
 					{
-						return RadarBlip.Create(plr, other, "GLDDOT", "GLDBELOW", "GLDABOVE");
+						return RadarBlip.Create(plr, other, "BLPDOT", RadarBlip.Col_Gold, "BLPBELOW", "BLPABOVE");
 					}
 				}
 				if (toggles & 1 << 1 && other.bFRIENDLY)
 				{
-					return RadarBlip.Create(plr, other, "CYNDOT", "CYNBELOW", "CYNABOVE");
+					return RadarBlip.Create(plr, other, "BLPDOT", RadarBlip.Col_Cyan, "BLPBELOW", "BLPABOVE");
 				}
 			}
 			if (toggles & 1 << 2 && other is "PlayerPawn")
 			{
-				return RadarBlip.Create(plr, other, "GRNDOT", "GRNBELOW", "GRNABOVE");
+				return RadarBlip.Create(plr, other, "BLPDOT", RadarBlip.Col_Green, "BLPBELOW", "BLPABOVE");
 			}
 		}
-		if (full || local)
+		if (full || mode == Mode_Movement || local)
 		{
 			if (toggles & 1 << 3 && other is 'Health')
 			{
-				return RadarBlip.Create(plr, other, "REDCROSS", drawBox: (4, 4));
+				return RadarBlip.Create(plr, other, "BLPCROSS", RadarBlip.Col_Red, drawBox: (4, 4));
 			}
 			if (toggles & 1 << 4 && other is 'BasicArmorPickup')
 			{
-				return RadarBlip.Create(plr, other, "BLUSQARE", drawBox: (3, 3));
+				return RadarBlip.Create(plr, other, "BLPCROSS", RadarBlip.Col_Blue, drawBox: (4, 4));
 			}
 			if (toggles & 1 << 5 && other is 'BasicArmorBonus')
 			{
-				return RadarBlip.Create(plr, other, "GRNSQARE", drawBox: (3, 3));
+				return RadarBlip.Create(plr, other, "BLPCROSS", RadarBlip.Col_Green, drawBox: (3, 3));
 			}
 			if (toggles & 1 << 6 && other is 'Weapon')
 			{
-				return RadarBlip.Create(plr, other, "GLDSTAR");
+				return RadarBlip.Create(plr, other, "BLPSTAR", RadarBlip.Col_Gold);
 			}
 			if (toggles & 1 << 7 && other is 'Ammo')
 			{
-				return RadarBlip.Create(plr, other, "TANSQARE", drawBox: (3, 3));
+				return RadarBlip.Create(plr, other, "BLPSQARE", RadarBlip.Col_Tan, drawBox: (3, 3));
 			}
 			if (toggles & 1 << 8 && other is 'PowerupGiver')
 			{
-				return RadarBlip.Create(plr, other, "PNKSTAR");
+				return RadarBlip.Create(plr, other, "BLPSTAR", RadarBlip.Col_Pink);
 			}
 			if (toggles & 1 << 9 && other.bCOUNTITEM && !(other is 'BasicArmorBonus') && !(other is 'PowerupGiver'))
 			{
-				return RadarBlip.Create(plr, other, "GLDSQARE", drawBox: (3, 3));
+				return RadarBlip.Create(plr, other, "BLPSQARE", RadarBlip.Col_Gold, drawBox: (3, 3));
 			}
 		}
 		
@@ -451,7 +467,7 @@ class ZRadarMainHandler : EventHandler
 				finalPos /= scale;
 				finalPos += (radarPos.y, radarPos.x); // [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
 
-				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, alpha, blip.DrawBox);
+				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, alpha, blip.DrawBox, col: blip.DrawCol);
 			}
 
 			// --------------- PRETEND WE WERE NEVER HERE ---------------
