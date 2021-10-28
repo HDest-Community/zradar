@@ -12,8 +12,7 @@ class RadarBlip
 {
 	enum BlipColors
 	{
-		Col_Red = 0xFFFF1111,
-		Col_LightRed = 0xFFFF5555,
+		Col_Red = 0xFFFF2222,
 		Col_Orange = 0xFFFFAA11,
 		Col_Gold = 0xFFFFDD00,
 		Col_Green = 0xFF11FF11,
@@ -321,7 +320,7 @@ class ZRadarMainHandler : EventHandler
 		{
 			if (toggles & 1 << 3 && other is 'Health')
 			{
-				return RadarBlip.Create(plr, other, "BLPCROSS", RadarBlip.Col_LightRed, drawBox: (4, 4));
+				return RadarBlip.Create(plr, other, "BLPCROSS", RadarBlip.Col_Red, drawBox: (4, 4));
 			}
 			if (toggles & 1 << 4 && other is 'BasicArmorPickup')
 			{
