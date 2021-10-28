@@ -468,15 +468,15 @@ class ZRadarMainHandler : EventHandler
 
 				// [Ace] arooкas is a god. This is non-negotiable.
 				double length = blip.DrawPos.Length();
+				double outtaRangeFac = 1.0;
 				if (length > scanDist)
 				{
-					blip.DrawPos *= (scanDist / length);
+					outtaRangeFac = scanDist / length;
 				}
 
 				// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
-				vector2 finalPos = (blip.DrawPos / scale) + (radarPos.y, radarPos.x);
-
-				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, alpha, blip.DrawBox, col: blip.DrawCol);
+				vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
+				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, alpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
 			}
 
 			// --------------- PRETEND WE WERE NEVER HERE ---------------
