@@ -1,14 +1,14 @@
 [enu default]
 ZRADAR_TOGGLE_1 = "Show Enemies";
-ZRADAR_TOGGLE_2 = "Show Players";
-ZRADAR_TOGGLE_3 = "Show Health";
-ZRADAR_TOGGLE_4 = "Show Armor Pickups";
-ZRADAR_TOGGLE_5 = "Show Armor Bonuses";
-ZRADAR_TOGGLE_6 = "Show Weapons";
-ZRADAR_TOGGLE_7 = "Show Ammo";
-ZRADAR_TOGGLE_8 = "Show Powerups";
-ZRADAR_TOGGLE_9 = "Show Countables";
-ZRADAR_TOGGLE_10 = "Unused";
+ZRADAR_TOGGLE_2 = "Show Friendlies";
+ZRADAR_TOGGLE_3 = "Show Players";
+ZRADAR_TOGGLE_4 = "Show Health";
+ZRADAR_TOGGLE_5 = "Show Armor Pickups";
+ZRADAR_TOGGLE_6 = "Show Armor Bonuses";
+ZRADAR_TOGGLE_7 = "Show Weapons";
+ZRADAR_TOGGLE_8 = "Show Ammo";
+ZRADAR_TOGGLE_9 = "Show Powerups";
+ZRADAR_TOGGLE_10 = "Show Countables";
 ZRADAR_TOGGLE_11 = "Unused";
 ZRADAR_TOGGLE_12 = "Unused";
 ZRADAR_TOGGLE_13 = "Unused";

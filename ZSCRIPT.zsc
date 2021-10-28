@@ -293,38 +293,38 @@ class ZRadarMainHandler : EventHandler
 					return RadarBlip.Create(plr, other, "CYNDOT", "CYNBELOW", "CYNABOVE");
 				}
 			}
-			if (toggles & 1 << 1 && other is "PlayerPawn")
+			if (toggles & 1 << 2 && other is "PlayerPawn")
 			{
 				return RadarBlip.Create(plr, other, "GRNDOT", "GRNBELOW", "GRNABOVE");
 			}
 		}
 		if (full || local)
 		{
-			if (toggles & 1 << 2 && other is 'Health')
+			if (toggles & 1 << 3 && other is 'Health')
 			{
 				return RadarBlip.Create(plr, other, "REDCROSS", drawBox: (4, 4));
 			}
-			if (toggles & 1 << 3 && other is 'BasicArmorPickup')
+			if (toggles & 1 << 4 && other is 'BasicArmorPickup')
 			{
 				return RadarBlip.Create(plr, other, "BLUSQARE", drawBox: (3, 3));
 			}
-			if (toggles & 1 << 4 && other is 'BasicArmorBonus')
+			if (toggles & 1 << 5 && other is 'BasicArmorBonus')
 			{
 				return RadarBlip.Create(plr, other, "GRNSQARE", drawBox: (3, 3));
 			}
-			if (toggles & 1 << 5 && other is 'Weapon')
+			if (toggles & 1 << 6 && other is 'Weapon')
 			{
 				return RadarBlip.Create(plr, other, "GLDSTAR");
 			}
-			if (toggles & 1 << 6 && other is 'Ammo')
+			if (toggles & 1 << 7 && other is 'Ammo')
 			{
 				return RadarBlip.Create(plr, other, "TANSQARE", drawBox: (3, 3));
 			}
-			if (toggles & 1 << 7 && other is 'PowerupGiver')
+			if (toggles & 1 << 8 && other is 'PowerupGiver')
 			{
 				return RadarBlip.Create(plr, other, "PNKSTAR");
 			}
-			if (toggles & 1 << 8 && other.bCOUNTITEM && !(other is 'BasicArmorBonus') && !(other is 'PowerupGiver'))
+			if (toggles & 1 << 9 && other.bCOUNTITEM && !(other is 'BasicArmorBonus') && !(other is 'PowerupGiver'))
 			{
 				return RadarBlip.Create(plr, other, "GLDSQARE", drawBox: (3, 3));
 			}
