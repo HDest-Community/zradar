@@ -16,11 +16,11 @@ class RadarBlip
 		Col_Orange = 0xFFFFAA11,
 		Col_Gold = 0xFFFFDD00,
 		Col_Green = 0xFF11FF11,
-		Col_BlueGreen = 0xFF11FF55,
+		Col_BlueGreen = 0xFF55FF77,
 		Col_Cyan = 0xFF11FFFF,
 		Col_Blue = 0xFF3366FF,
-		Col_Purple = 0xFF7711FF,
-		Col_Pink = 0xFFFF11FF,
+		Col_Purple = 0xFF7755FF,
+		Col_Pink = 0xFFFF55FF,
 		Col_Tan = 0XFFDBC9A4
 	}
 
