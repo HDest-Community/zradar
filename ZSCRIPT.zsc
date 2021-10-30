@@ -71,6 +71,7 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar RadarColor;
 	private transient CVar RangeUnits;
 	private transient CVar RangeDivisions;
+	private transient CVar ShowScanner;
 
 	private transient CVar ScanDistance;
 	private transient CVar OverscanDistance;
@@ -116,6 +117,7 @@ class ZRadarMainHandler : EventHandler
 		RadarColor = CVar.GetCVar('zradar_color', players[consoleplayer]);
 		RangeUnits = CVar.GetCVar('zradar_rangeunits', players[consoleplayer]);
 		RangeDivisions = CVar.GetCVar('zradar_rangedivisions', players[consoleplayer]);
+		ShowScanner = CVar.GetCVar('zradar_showscanner', players[consoleplayer]);
 
 		ScanDistance = CVar.GetCVar('zradar_distance');
 		OverscanDistance = CVar.GetCVar('zradar_overdistance');
@@ -408,7 +410,7 @@ class ZRadarMainHandler : EventHandler
 			StatusBar.DrawImage("R"..radCol.."MAIN", radarPos, drawFlags, alpha);
 
 			// [Ace] Scan circle.
-			if (refRate > 1)
+			if (refRate > 1 && ShowScanner.GetBool())
 			{
 				vector2 scanScale = (1.0, 1.0);
 				scanScale *= ArrayRefreshTics / double(refRate);

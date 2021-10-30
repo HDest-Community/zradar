@@ -29,6 +29,7 @@ OptionMenu "ZRadarOptions"
 	Option "Color", "zradar_color", "RadarColor"
 	Option "Range Units", "zradar_rangeunits", "RangeUnits"
 	Slider "Range Divisions", "zradar_rangedivisions", 2, 5, 1, 0
+	Option "Show Scan Effect", "zradar_showscanner", "YesNo"
 	StaticText ""
 	Slider "Scan Distance", "zradar_distance", 250, 3000, 50, 0
 	Slider "Overscan Distance", "zradar_overdistance", 250, 3000, 50, 0
