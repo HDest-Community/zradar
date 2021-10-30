@@ -29,7 +29,7 @@ OptionMenu "ZRadarOptions"
 	StaticText ""
 	Slider "Scale", "zradar_scale", 0.1, 3.0, 0.1, 1
 	Slider "Opacity", "zradar_opacity", 0.05, 1.0, 0.05, 2
-	Option "Color", "zradar_color", "RadarColor"
+	ColorPicker "Color", "zradar_color"
 	Option "Range Units", "zradar_rangeunits", "RangeUnits"
 	Slider "Range Divisions", "zradar_rangedivisions", 2, 5, 1, 0
 	StaticText ""
@@ -105,12 +105,6 @@ OptionValue "RadarRefreshRate"
 	15, "15 Tics"
 	35, "35 Tics"
 	60, "60 Tics"
-}
-
-OptionValue "RadarColor"
-{
-	0, "Blue"
-	1, "Green"
 }
 
 OptionValue "RangeUnits"

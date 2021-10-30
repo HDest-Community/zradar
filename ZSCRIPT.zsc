@@ -403,7 +403,8 @@ class ZRadarMainHandler : EventHandler
 
 			// --------------- CIRCLE ---------------
 
-			int radCol = RadarColor.GetInt();
+			Color radCol = 0xFF000000 | RadarColor.GetInt();
+
 			vector2 radarPos = (OffsetX.GetInt(), OffsetY.GetInt());
 			int drawFlags = GetAlignmentFlags(radarPos);
 			drawFlags |= StatusBar.DI_ITEM_CENTER;
@@ -411,7 +412,7 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] Main.
 			if (visFlags & 1)
 			{
-				StatusBar.DrawImage("R"..radCol.."MAIN", radarPos, drawFlags, alpha);
+				StatusBar.DrawImage("ZRMAIN", radarPos, drawFlags, alpha, col: radCol);
 			}
 
 			// [Ace] Scan circle.
@@ -419,20 +420,13 @@ class ZRadarMainHandler : EventHandler
 			{
 				vector2 scanScale = (1.0, 1.0);
 				scanScale *= ArrayRefreshTics / double(refRate);
-				StatusBar.DrawImage("R"..radCol.."SCAN", radarPos, drawFlags, alpha, scale: scanScale);
+				StatusBar.DrawImage("ZRSCAN", radarPos, drawFlags, alpha, scale: scanScale, col: radCol);
 			}
 
 			// [Ace] Range circles.
 			int units = RangeUnits.GetInt();
 			if (units > 0)
 			{
-				int rangeCol = 0;
-				switch (radCol)
-				{
-					case 0: rangeCol = Font.CR_LIGHTBLUE; break;
-					case 1: rangeCol = Font.CR_GREEN; break;
-				}
-
 				int divisions = RangeDivisions.GetInt();
 				for (int i = 1; i <= divisions; ++i)
 				{
@@ -444,10 +438,10 @@ class ZRadarMainHandler : EventHandler
 					}
 
 					// [Ace] Circle.
-					StatusBar.DrawImage("R"..radCol.."RANGE", radarPos, drawFlags, alpha * 0.60, scale: (1.0, 1.0) * (i / double(divisions)));
+					StatusBar.DrawImage("ZRRANGE", radarPos, drawFlags, alpha * 0.60, scale: (1.0, 1.0) * (i / double(divisions)), col: radCol);
 
 					// [Ace] Number.
-					StatusBar.DrawString(mMainFont, str, (radarPos.x - 1, radarPos.y + 2 - 60 / divisions * i), drawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, rangeCol, alpha * 0.60);
+					StatusBar.DrawString(mMainFont, str, (radarPos.x - 1, radarPos.y + 2 - 60 / divisions * i), drawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, Font.CR_WHITE, alpha * 0.60);
 				}
 			}
 
