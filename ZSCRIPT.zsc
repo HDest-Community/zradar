@@ -13,7 +13,7 @@ class RadarBlip
 	enum BlipColors
 	{
 		Col_Red = 0xFFFF2222,
-		Col_Orange = 0xFFFFAA11,
+		Col_Orange = 0xFFFF7711,
 		Col_Gold = 0xFFFFDD00,
 		Col_Green = 0xFF11FF11,
 		Col_BlueGreen = 0xFF55FF77,
