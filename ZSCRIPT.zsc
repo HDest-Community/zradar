@@ -66,12 +66,12 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar DrawOverHud;
 	private transient CVar OffsetX;
 	private transient CVar OffsetY;
+	private transient CVar VisibilityFlags;
 	private transient CVar Scale;
 	private transient CVar Opacity;
 	private transient CVar RadarColor;
 	private transient CVar RangeUnits;
 	private transient CVar RangeDivisions;
-	private transient CVar ShowScanner;
 
 	private transient CVar ScanDistance;
 	private transient CVar OverscanDistance;
@@ -117,7 +117,7 @@ class ZRadarMainHandler : EventHandler
 		RadarColor = CVar.GetCVar('zradar_color', players[consoleplayer]);
 		RangeUnits = CVar.GetCVar('zradar_rangeunits', players[consoleplayer]);
 		RangeDivisions = CVar.GetCVar('zradar_rangedivisions', players[consoleplayer]);
-		ShowScanner = CVar.GetCVar('zradar_showscanner', players[consoleplayer]);
+		VisibilityFlags = CVar.GetCVar('zradar_visibility', players[consoleplayer]);
 
 		ScanDistance = CVar.GetCVar('zradar_distance');
 		OverscanDistance = CVar.GetCVar('zradar_overdistance');
@@ -389,6 +389,8 @@ class ZRadarMainHandler : EventHandler
 		double radarScale = Scale.GetFloat();
 		int refRate = RefreshRate.GetInt();
 
+		int visFlags = VisibilityFlags.GetInt();
+
 		if (RadarMode[consoleplayer] > Mode_Disabled)
 		{
 			StatusBar.BeginHUD(1.0, true);
@@ -407,10 +409,13 @@ class ZRadarMainHandler : EventHandler
 			drawFlags |= StatusBar.DI_ITEM_CENTER;
 
 			// [Ace] Main.
-			StatusBar.DrawImage("R"..radCol.."MAIN", radarPos, drawFlags, alpha);
+			if (visFlags & 1)
+			{
+				StatusBar.DrawImage("R"..radCol.."MAIN", radarPos, drawFlags, alpha);
+			}
 
 			// [Ace] Scan circle.
-			if (refRate > 1 && ShowScanner.GetBool())
+			if (refRate > 1 && visFlags & 2)
 			{
 				vector2 scanScale = (1.0, 1.0);
 				scanScale *= ArrayRefreshTics / double(refRate);

@@ -9,7 +9,8 @@ user float zradar_opacity = 0.5;
 user int zradar_color = 0;
 user int zradar_rangeunits = 1;
 user int zradar_rangedivisions = 3;
-user bool zradar_showscanner = true;
+
+user int zradar_visibility = 2147483647;
 
 server int zradar_distance = 1000;
 server int zradar_overdistance = 1500;
