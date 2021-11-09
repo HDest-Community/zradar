@@ -193,7 +193,6 @@ class ZRadarMainHandler : EventHandler
 		{
 			RadarBlips.Clear();
 
-			int angleLimit = AngleLimit.GetInt();
 			int scanDist = max(ScanDistance.Getint(), OverscanDistance.GetInt());
 			BlockThingsIterator it = BlockThingsIterator.Create(plr, scanDist);
 			while (it.Next())
@@ -204,7 +203,7 @@ class ZRadarMainHandler : EventHandler
 				}
 
 				double angle = Actor.AbsAngle(plr.AngleTo(it.thing), plr.Angle);
-				bool isWithinScanAngle = angle <= max(45, angleLimit) / 2;
+				bool isWithinScanAngle = angle <= max(45, AngleLimit.GetInt()) / 2;
 
 				if (isWithinScanAngle)
 				{
@@ -391,6 +390,8 @@ class ZRadarMainHandler : EventHandler
 
 		int visFlags = VisibilityFlags.GetInt();
 
+		int angleLimit = AngleLimit.GetInt();
+
 		if (RadarMode[consoleplayer] > Mode_Disabled)
 		{
 			StatusBar.BeginHUD(1.0, true);
@@ -441,7 +442,7 @@ class ZRadarMainHandler : EventHandler
 					StatusBar.DrawImage("ZRRANGE", radarPos, drawFlags, alpha * 0.60, scale: (1.0, 1.0) * (i / double(divisions)), col: radCol);
 
 					// [Ace] Number.
-					StatusBar.DrawString(mMainFont, str, (radarPos.x - 1, radarPos.y + 2 - 60 / divisions * i), drawFlags | BaseStatusBar.DI_TEXT_ALIGN_CENTER, Font.CR_WHITE, alpha * 0.60);
+					StatusBar.DrawString(mMainFont, str, (radarPos.x - 1, radarPos.y + 2 - 60 / divisions * i), drawFlags | StatusBar.DI_TEXT_ALIGN_CENTER, Font.CR_WHITE, alpha * 0.60);
 				}
 			}
 
@@ -456,9 +457,9 @@ class ZRadarMainHandler : EventHandler
 			}
 			StatusBar.DrawString(mMainFont, "+", (radarPos.x - 4, radarPos.y - 4), drawFlags, CrossColor, alpha);
 
-			// --------------- BLIPS N STUFF ---------------
+			// --------------- BLIPS ---------------
 
-			alpha *= refRate > 1 ? 1.0 - ArrayRefreshTics / double(refRate) : 1.0;
+			double blipAlpha = alpha * (refRate > 1 ? 1.0 - ArrayRefreshTics / double(refRate) : 1.0);
 
 			// [Ace] This magic number ensures the blips scale correctly with distance.
 			// I think the number is supposed to be the radar's radius minus the blip's radius.
@@ -477,7 +478,15 @@ class ZRadarMainHandler : EventHandler
 
 				// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
 				vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
-				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, alpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
+				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, blipAlpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
+			}
+
+			// --------------- ANGLE HANDS ---------------
+
+			if (angleLimit > 0 && angleLimit < 360)
+			{
+				StatusBar.DrawImageRotated("ZRHANDL", radarPos, drawFlags, angleLimit / 2, alpha, col: radCol);
+				StatusBar.DrawImageRotated("ZRHANDR", radarPos, drawFlags, -angleLimit / 2, alpha, col: radCol);
 			}
 
 			// --------------- PRETEND WE WERE NEVER HERE ---------------
