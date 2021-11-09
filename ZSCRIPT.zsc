@@ -485,8 +485,13 @@ class ZRadarMainHandler : EventHandler
 
 			if (angleLimit > 0 && angleLimit < 360)
 			{
+				StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
 				StatusBar.DrawImageRotated("ZRHANDL", radarPos, drawFlags, angleLimit / 2, alpha, col: radCol);
+
+				StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
 				StatusBar.DrawImageRotated("ZRHANDR", radarPos, drawFlags, -angleLimit / 2, alpha, col: radCol);
+				
+				StatusBar.ClearClipRect();
 			}
 
 			// --------------- PRETEND WE WERE NEVER HERE ---------------
