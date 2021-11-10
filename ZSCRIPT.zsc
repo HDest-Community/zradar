@@ -457,6 +457,19 @@ class ZRadarMainHandler : EventHandler
 			}
 			StatusBar.DrawString(mMainFont, "+", (radarPos.x - 4, radarPos.y - 4), drawFlags, CrossColor, alpha);
 
+			// --------------- ANGLE HANDS ---------------
+
+			if (angleLimit > 0 && angleLimit < 360)
+			{
+				StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
+				StatusBar.DrawImageRotated("ZRHANDL", radarPos, drawFlags, angleLimit / 2, alpha, col: radCol);
+
+				StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
+				StatusBar.DrawImageRotated("ZRHANDR", radarPos, drawFlags, -angleLimit / 2, alpha, col: radCol);
+				
+				StatusBar.ClearClipRect();
+			}
+
 			// --------------- BLIPS ---------------
 
 			double blipAlpha = alpha * (refRate > 1 ? 1.0 - ArrayRefreshTics / double(refRate) : 1.0);
@@ -479,19 +492,6 @@ class ZRadarMainHandler : EventHandler
 				// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
 				vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
 				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, blipAlpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
-			}
-
-			// --------------- ANGLE HANDS ---------------
-
-			if (angleLimit > 0 && angleLimit < 360)
-			{
-				StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
-				StatusBar.DrawImageRotated("ZRHANDL", radarPos, drawFlags, angleLimit / 2, alpha, col: radCol);
-
-				StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
-				StatusBar.DrawImageRotated("ZRHANDR", radarPos, drawFlags, -angleLimit / 2, alpha, col: radCol);
-				
-				StatusBar.ClearClipRect();
 			}
 
 			// --------------- PRETEND WE WERE NEVER HERE ---------------
