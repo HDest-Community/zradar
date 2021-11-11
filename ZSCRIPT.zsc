@@ -89,7 +89,7 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar BatteryRechargeTime;
 
 	private transient Array<RadarBlip> RadarBlips;
-	private int RadarMode[MAXPLAYERS]; // [Ace] This should have been called RadarState.
+	int RadarMode[MAXPLAYERS]; // [Ace] This should have been called RadarState.
 	private int BatteryPower[MAXPLAYERS];
 	private int AccumulatedDrain[MAXPLAYERS];
 
@@ -516,11 +516,6 @@ class ZRadarMainHandler : EventHandler
 		return Alpha;
 	}
 	protected virtual clearscope bool CheckRadarCondition(PlayerPawn plr) { return true; }
-
-	clearscope int GetRadarMode()
-	{
-		return RadarMode[consoleplayer];
-	}
 
 	virtual double GetDrainMult() const
 	{
