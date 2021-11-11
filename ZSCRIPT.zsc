@@ -390,7 +390,7 @@ class ZRadarMainHandler : EventHandler
 
 		int visFlags = VisibilityFlags.GetInt();
 
-		int angleLimit = AngleLimit.GetInt();
+		int angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
 
 		if (RadarMode[consoleplayer] > Mode_Disabled)
 		{
@@ -420,8 +420,15 @@ class ZRadarMainHandler : EventHandler
 			if (refRate > 1 && visFlags & 2)
 			{
 				vector2 scanScale = (1.0, 1.0);
-				scanScale *= ArrayRefreshTics / double(refRate);
-				StatusBar.DrawImage("ZRSCAN", radarPos, drawFlags, alpha, scale: scanScale, col: radCol);
+				scanScale /= ArrayRefreshTics / double(refRate);
+
+				StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
+				StatusBar.DrawImageRotated("ZRSCANL", radarPos, drawFlags, angleLimit / 2, alpha, scanScale, col: radCol);
+
+				StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
+				StatusBar.DrawImageRotated("ZRSCANR", radarPos, drawFlags, -angleLimit / 2, alpha, scanScale, col: radCol);
+				
+				StatusBar.ClearClipRect();
 			}
 
 			// [Ace] Range circles.
