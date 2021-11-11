@@ -145,7 +145,7 @@ class ZRadarMainHandler : EventHandler
 	{
 		if (GameState != GS_LEVEL) return;
 
-		int DrainTime = int(35 * 60 * BatteryDrainTime.GetFloat() * GetDrainMult());
+		int DrainTime = int((35 * 60 * BatteryDrainTime.GetFloat()) / GetDrainMult());
 		int RechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
 		int refRate = RefreshRate.GetInt();
 		let plr = players[consoleplayer].mo;
@@ -521,8 +521,8 @@ class ZRadarMainHandler : EventHandler
 	{
 		switch (RadarMode[consoleplayer])
 		{
-			case Mode_Local: return 2.0;
-			case Mode_Movement: return 1.5;
+			case Mode_Local: return 0.5;
+			case Mode_Movement: return 0.66;
 			default: return 1.0;
 		}
 	}
