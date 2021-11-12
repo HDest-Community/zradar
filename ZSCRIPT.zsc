@@ -24,7 +24,7 @@ class RadarBlip
 		Col_Tan = 0XFFDBC9A4
 	}
 
-	vector2 DrawPos;
+	vector3 Diff;
 	string Icon;
 	Color DrawCol;
 	vector2 DrawBox;
@@ -35,20 +35,13 @@ class RadarBlip
 		let blip = new('RadarBlip');
 
 		// [Ace] This is not level.Vec3Diff because then I'd have to flip the Z axis and screw that.
-		vector3 diff = (plr.pos.x - other.pos.x, plr.pos.y - other.pos.y, other.pos.z - plr.pos.z);
-
-		blip.DrawPos =
-		(
-			diff.x * cos(-plr.angle) - diff.y * sin(-plr.angle),
-			diff.x * sin(-plr.angle) + diff.y * cos(-plr.angle)
-		);
-
+		blip.Diff = (plr.pos.x - other.pos.x, plr.pos.y - other.pos.y, other.pos.z - plr.pos.z);
 		blip.DrawCol = drawCol;
 		blip.DrawBox = drawBox;
 		blip.IsHostile = other.bISMONSTER && !other.bFRIENDLY;
 
 		// [Ace] Use the correct icon.
-		blip.Icon = diff.z <= -60 && iconBelow != "" ? iconBelow : (diff.z >= 60 && iconAbove != "" ? iconAbove : iconNormal);
+		blip.Icon = blip.Diff.z <= -60 && iconBelow != "" ? iconBelow : (blip.Diff.z >= 60 && iconAbove != "" ? iconAbove : iconNormal);
 
 		return blip;
 	}
@@ -406,6 +399,8 @@ class ZRadarMainHandler : EventHandler
 		
 		mMainFont = HUDFont.Create(FontName);
 
+		let plr = players[consoleplayer].mo;
+
 		int OriginalWidth = StatusBar.HorizontalResolution;
 		int OriginalHeight = StatusBar.VerticalResolution;
 
@@ -520,7 +515,13 @@ class ZRadarMainHandler : EventHandler
 			RadarBlip blip = RadarBlips[i];
 
 			// [Ace] arooкas is a god. This is non-negotiable.
-			double length = blip.DrawPos.Length();
+			vector2 drawPos =
+			(
+				blip.Diff.x * cos(-plr.angle) - blip.Diff.y * sin(-plr.angle),
+				blip.Diff.x * sin(-plr.angle) + blip.Diff.y * cos(-plr.angle)
+			);
+
+			double length = drawPos.Length();
 			if (speed > 0 && length / fullScanDist > fullScanLengthFac)
 			{
 				continue;
@@ -534,7 +535,7 @@ class ZRadarMainHandler : EventHandler
 
 			double blipAlpha = alpha * (speed == 0 ? 1.0 : 1.0 - fullScanLengthFac + (length / fullScanDist));
 			// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
-			vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
+			vector2 finalPos = ((drawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
 			StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, blipAlpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
 		}
 
