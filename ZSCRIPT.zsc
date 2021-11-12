@@ -197,6 +197,12 @@ class ZRadarMainHandler : EventHandler
 		{
 			RadarBlips.Clear();
 
+			int angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
+			if (angleLimit == 0)
+			{
+				angleLimit = players[consoleplayer].FOV;
+			}
+
 			BlockThingsIterator it = BlockThingsIterator.Create(plr, fullScanDist);
 			while (it.Next())
 			{
@@ -206,7 +212,7 @@ class ZRadarMainHandler : EventHandler
 				}
 
 				double angle = Actor.AbsAngle(plr.AngleTo(it.thing), plr.Angle);
-				bool isWithinScanAngle = angle <= max(45, AngleLimit.GetInt()) / 2;
+				bool isWithinScanAngle = angle <= max(45, angleLimit) / 2;
 
 				if (isWithinScanAngle)
 				{
@@ -407,6 +413,10 @@ class ZRadarMainHandler : EventHandler
 
 		int visFlags = VisibilityFlags.GetInt();
 		int angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
+		if (angleLimit == 0)
+		{
+			angleLimit = players[consoleplayer].FOV;
+		}
 		int fullScanDist = max(ScanDistance.GetInt(), OverscanDistance.GetInt());
 		int minScanDist = min(ScanDistance.GetInt(), OverscanDistance.GetInt());
 		int speed = ScanSpeed.GetInt();
