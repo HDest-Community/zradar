@@ -444,9 +444,13 @@ class ZRadarMainHandler : EventHandler
 		{
 			StatusBar.DrawImage("ZRMAIN", radarPos, drawFlags, alpha, col: radCol);
 		}
+		if (visFlags & 2)
+		{
+			StatusBar.DrawImage("ZRLINES", radarPos, drawFlags, alpha, col: radCol);
+		}
 
 		// [Ace] Scan circle.
-		if (visFlags & 2 && minScanLengthFac <= 1.0 && speed > 0)
+		if (visFlags & 4 && minScanLengthFac <= 1.0 && speed > 0)
 		{
 			vector2 scanScale = (1.0, 1.0) / minScanLengthFac;
 

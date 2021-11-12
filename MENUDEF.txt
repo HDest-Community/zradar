@@ -25,7 +25,8 @@ OptionMenu "ZRadarOptions"
 	StaticText "0 is center. Console is recommended for fine-tuning.", "White"
 	StaticText ""
 	FlagOption "Show Background", "zradar_visibility", "YesNo", 0
-	FlagOption "Show Scan Effect", "zradar_visibility", "YesNo", 1
+	FlagOption "Show Lines", "zradar_visibility", "YesNo", 1
+	FlagOption "Show Scan Effect", "zradar_visibility", "YesNo", 2
 	StaticText ""
 	Slider "Scale", "zradar_scale", 0.1, 3.0, 0.1, 1
 	Slider "Opacity", "zradar_opacity", 0.05, 1.0, 0.05, 2
