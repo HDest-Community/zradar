@@ -39,7 +39,8 @@ OptionMenu "ZRadarOptions"
 	StaticText "will stay at edge of the radar. This number must be larger than scan distance.", "White"
 	StaticText ""
 	Slider "Angle Limit", "zradar_anglelimit", 45, 360, 45, 0
-	Option "Refresh Rate", "zradar_refreshrate", "RadarRefreshRate"
+	Slider "Scan Speed", "zradar_scanspeed", 0, 256, 8, 0
+	StaticText "The scan speed in map units. Total scan time is affected by (over)scan distance.", "White"
 	StaticText ""
 	FlagOption "$ZRADAR_TOGGLE_1", "zradar_validactors", "YesNo", 0
 	FlagOption "$ZRADAR_TOGGLE_2", "zradar_validactors", "YesNo", 1

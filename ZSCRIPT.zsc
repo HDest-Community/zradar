@@ -76,7 +76,7 @@ class ZRadarMainHandler : EventHandler
 	protected transient CVar ScanDistance;
 	protected transient CVar OverscanDistance;
 	protected transient CVar AngleLimit;
-	protected transient CVar RefreshRate;
+	protected transient CVar ScanSpeed;
 
 	private transient CVar ValidActors;
 
@@ -93,7 +93,7 @@ class ZRadarMainHandler : EventHandler
 	private int BatteryPower[MAXPLAYERS];
 	private int AccumulatedDrain[MAXPLAYERS];
 
-	private transient int ArrayRefreshTics;
+	private transient int ScanLength;
 
 	static void DestroyMainHandler()
 	{
@@ -122,7 +122,7 @@ class ZRadarMainHandler : EventHandler
 		ScanDistance = CVar.GetCVar('zradar_distance');
 		OverscanDistance = CVar.GetCVar('zradar_overdistance');
 		AngleLimit = CVar.GetCVar('zradar_anglelimit');
-		RefreshRate = CVar.GetCVar('zradar_refreshrate');
+		ScanSpeed = CVar.GetCVar('zradar_scanspeed');
 
 		ValidActors = CVar.GetCVar('zradar_validactors');
 
@@ -143,11 +143,13 @@ class ZRadarMainHandler : EventHandler
 
 	override void WorldTick()
 	{
-		if (GameState != GS_LEVEL) return;
+		if (GameState != GS_LEVEL)
+		{
+			return;
+		}
 
-		int DrainTime = int((35 * 60 * BatteryDrainTime.GetFloat()) / GetDrainMult());
-		int RechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
-		int refRate = RefreshRate.GetInt();
+		int drainTime = int((35 * 60 * BatteryDrainTime.GetFloat()) / GetDrainMult());
+		int rechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
 		let plr = players[consoleplayer].mo;
 
 		if (!plr)
@@ -167,7 +169,7 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] Draining.
 			if (RadarMode[consoleplayer] > Mode_Disabled)
 			{
-				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]++ / double(DrainTime)) * 100);
+				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]++ / double(drainTime)) * 100);
 
 				if (BatteryPower[consoleplayer] <= 0)
 				{
@@ -178,7 +180,7 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] Recharging.
 			else if (RadarMode[consoleplayer] == Mode_Disabled && BatteryPower[consoleplayer] < 100)
 			{
-				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]-- / double(RechargeTime)) * 100);
+				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]-- / double(rechargeTime)) * 100);
 
 				if (plr && BatteryPower[consoleplayer] == 100)
 				{
@@ -188,16 +190,17 @@ class ZRadarMainHandler : EventHandler
 			}
 		}
 
-		// [Ace] This is where enemies are updated.
-		if (RadarMode[consoleplayer] > Mode_Disabled && ArrayRefreshTics++ >= refRate)
+		// [Ace] This is where blips are updated.
+		int fullScanDist = max(ScanDistance.Getint(), OverscanDistance.GetInt());
+		int minScanDist = min(ScanDistance.Getint(), OverscanDistance.GetInt());
+		if (RadarMode[consoleplayer] > Mode_Disabled && ScanLength == 0)
 		{
 			RadarBlips.Clear();
 
-			int scanDist = max(ScanDistance.Getint(), OverscanDistance.GetInt());
-			BlockThingsIterator it = BlockThingsIterator.Create(plr, scanDist);
+			BlockThingsIterator it = BlockThingsIterator.Create(plr, fullScanDist);
 			while (it.Next())
 			{
-				if (it.thing == players[consoleplayer].mo || it.thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.thing) - it.thing.Radius + it.thing.vel.length() > scanDist)
+				if (it.thing == players[consoleplayer].mo || it.thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.thing) - it.thing.Radius + it.thing.vel.length() > fullScanDist)
 				{
 					continue;
 				}
@@ -217,13 +220,25 @@ class ZRadarMainHandler : EventHandler
 
 			int refSoundContact = RefreshSoundContact.GetInt();
 			int refSoundClear = RefreshSoundClear.GetInt();
-			if (plr && refRate >= 15 && RefSoundContact > 0) // [Ace] The >= 15 check is so it doesn't screw up your hearing if you set it to something ridiculously low.
+			if (plr && RefSoundContact > 0)
 			{
 				string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..refSoundContact : "Radar/RefreshSound/Clear"..refSoundClear;
 				plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RefreshSoundVolume.GetFloat());
 			}
+		}
 
-			ArrayRefreshTics = 0;
+		int speed = ScanSpeed.GetInt();
+		if (speed == 0)
+		{
+			ScanLength = 0;
+		}
+		else
+		{
+			ScanLength = min(ScanLength + speed, fullScanDist * 2);
+			if (ScanLength == fullScanDist * 2)
+			{
+				ScanLength = 0;
+			}
 		}
 	}
 
@@ -232,11 +247,11 @@ class ZRadarMainHandler : EventHandler
 		if (e.Name ~== "ChangeRadarMode")
 		{
 			// [Ace] Force radar refresh when you switch modes.
-			ArrayRefreshTics = RefreshRate.GetInt();
-			int SelMode = SelectionMode.GetInt();
+			ScanLength = 0;
+			int selMode = SelectionMode.GetInt();
 			
 			// [Ace] Cycle modes.
-			if (SelMode == -1)
+			if (selMode == -1)
 			{
 				SetRadarMode(e.Player, (RadarMode[e.Player] + 1) % 4);
 			}
@@ -244,7 +259,7 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] Or toggle between disabled and the selected mode.
 			else
 			{
-				SetRadarMode(e.Player, RadarMode[e.Player] == SelMode ? 0 : SelMode);
+				SetRadarMode(e.Player, RadarMode[e.Player] == selMode ? 0 : selMode);
 			}
 		}
 	}
@@ -378,7 +393,10 @@ class ZRadarMainHandler : EventHandler
 
 	private ui void DrawRadar()
 	{
-		if (GameState != GS_LEVEL || AutomapActive) return;
+		if (GameState != GS_LEVEL || AutomapActive || RadarMode[consoleplayer] == Mode_Disabled)
+		{
+			return;
+		}
 		
 		mMainFont = HUDFont.Create(FontName);
 
@@ -386,126 +404,130 @@ class ZRadarMainHandler : EventHandler
 		int OriginalHeight = StatusBar.VerticalResolution;
 
 		double radarScale = Scale.GetFloat();
-		int refRate = RefreshRate.GetInt();
 
 		int visFlags = VisibilityFlags.GetInt();
-
 		int angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
+		int fullScanDist = max(ScanDistance.GetInt(), OverscanDistance.GetInt());
+		int minScanDist = min(ScanDistance.GetInt(), OverscanDistance.GetInt());
+		int speed = ScanSpeed.GetInt();
 
-		if (RadarMode[consoleplayer] > Mode_Disabled)
+		double fullScanLengthFac = ScanLength / double(fullScanDist);
+		double minScanLengthFac = ScanLength / double(minScanDist);
+
+		StatusBar.BeginHUD(1.0, true);
+		StatusBar.SetSize(StatusBar.RelTop, int(640 / radarScale), int(480 / radarScale));
+
+		// --------------- SHARED ---------------
+
+		double alpha = GetAlpha();
+
+		// --------------- CIRCLE ---------------
+
+		Color radCol = 0xFF000000 | RadarColor.GetInt();
+
+		vector2 radarPos = (OffsetX.GetInt(), OffsetY.GetInt());
+		int drawFlags = GetAlignmentFlags(radarPos);
+		drawFlags |= StatusBar.DI_ITEM_CENTER;
+
+		// [Ace] Main.
+		if (visFlags & 1)
 		{
-			StatusBar.BeginHUD(1.0, true);
-			StatusBar.SetSize(StatusBar.RelTop, int(640 / radarScale), int(480 / radarScale));
-
-			// --------------- SHARED ---------------
-
-			double alpha = GetAlpha();
-			int scanDist = min(ScanDistance.GetInt(), OverscanDistance.GetInt());
-
-			// --------------- CIRCLE ---------------
-
-			Color radCol = 0xFF000000 | RadarColor.GetInt();
-
-			vector2 radarPos = (OffsetX.GetInt(), OffsetY.GetInt());
-			int drawFlags = GetAlignmentFlags(radarPos);
-			drawFlags |= StatusBar.DI_ITEM_CENTER;
-
-			// [Ace] Main.
-			if (visFlags & 1)
-			{
-				StatusBar.DrawImage("ZRMAIN", radarPos, drawFlags, alpha, col: radCol);
-			}
-
-			// [Ace] Scan circle.
-			if (refRate > 1 && visFlags & 2)
-			{
-				vector2 scanScale = (1.0, 1.0);
-				scanScale /= ArrayRefreshTics / double(refRate);
-
-				StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
-				StatusBar.DrawImageRotated("ZRSCANL", radarPos, drawFlags, angleLimit / 2, alpha, scanScale, col: radCol);
-
-				StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
-				StatusBar.DrawImageRotated("ZRSCANR", radarPos, drawFlags, -angleLimit / 2, alpha, scanScale, col: radCol);
-				
-				StatusBar.ClearClipRect();
-			}
-
-			// [Ace] Range circles.
-			int units = RangeUnits.GetInt();
-			if (units > 0)
-			{
-				int divisions = RangeDivisions.GetInt();
-				for (int i = 1; i <= divisions; ++i)
-				{
-					string str = "";
-					switch (units)
-					{
-						case 1: str = StatusBar.FormatNumber(int(scanDist / double(divisions) * i), 1, 4); break;
-						case 2: str = StatusBar.FormatNumber(int(scanDist / double(divisions) / 37.0 * i), 1, 3).."m"; break;
-					}
-
-					// [Ace] Circle.
-					StatusBar.DrawImage("ZRRANGE", radarPos, drawFlags, alpha * 0.60, scale: (1.0, 1.0) * (i / double(divisions)), col: radCol);
-
-					// [Ace] Number.
-					StatusBar.DrawString(mMainFont, str, (radarPos.x - 1, radarPos.y + 2 - 60 / divisions * i), drawFlags | StatusBar.DI_TEXT_ALIGN_CENTER, Font.CR_WHITE, alpha * 0.60);
-				}
-			}
-
-			// --------------- CROSS ---------------
-
-			int CrossColor = 0;
-			switch (RadarMode[consoleplayer])
-			{
-				case Mode_Local: CrossColor = Font.CR_RED; break;
-				case Mode_Movement: CrossColor = Font.CR_YELLOW; break;
-				case Mode_Full: CrossColor = Font.CR_GREEN; break;
-			}
-			StatusBar.DrawString(mMainFont, "+", (radarPos.x - 4, radarPos.y - 4), drawFlags, CrossColor, alpha);
-
-			// --------------- ANGLE HANDS ---------------
-
-			if (angleLimit > 0 && angleLimit < 360)
-			{
-				StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
-				StatusBar.DrawImageRotated("ZRHANDL", radarPos, drawFlags, angleLimit / 2, alpha, col: radCol);
-
-				StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
-				StatusBar.DrawImageRotated("ZRHANDR", radarPos, drawFlags, -angleLimit / 2, alpha, col: radCol);
-				
-				StatusBar.ClearClipRect();
-			}
-
-			// --------------- BLIPS ---------------
-
-			double blipAlpha = alpha * (refRate > 1 ? 1.0 - ArrayRefreshTics / double(refRate) : 1.0);
-
-			// [Ace] This magic number ensures the blips scale correctly with distance.
-			// I think the number is supposed to be the radar's radius minus the blip's radius.
-			double scale = scanDist / 58.60;
-			for (int i = 0; i < RadarBlips.Size(); ++i)
-			{
-				RadarBlip blip = RadarBlips[i];
-
-				// [Ace] arooкas is a god. This is non-negotiable.
-				double length = blip.DrawPos.Length();
-				double outtaRangeFac = 1.0;
-				if (length > scanDist)
-				{
-					outtaRangeFac = scanDist / length;
-				}
-
-				// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
-				vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
-				StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, blipAlpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
-			}
-
-			// --------------- PRETEND WE WERE NEVER HERE ---------------
-
-			StatusBar.BeginHUD(1.0, false);
-			StatusBar.SetSize(StatusBar.RelTop, OriginalWidth, OriginalHeight);
+			StatusBar.DrawImage("ZRMAIN", radarPos, drawFlags, alpha, col: radCol);
 		}
+
+		// [Ace] Scan circle.
+		if (visFlags & 2 && minScanLengthFac <= 1.0 && speed > 0)
+		{
+			vector2 scanScale = (1.0, 1.0) / minScanLengthFac;
+
+			StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
+			StatusBar.DrawImageRotated("ZRSCANL", radarPos, drawFlags, angleLimit / 2, alpha, scanScale, col: radCol);
+
+			StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
+			StatusBar.DrawImageRotated("ZRSCANR", radarPos, drawFlags, -angleLimit / 2, alpha, scanScale, col: radCol);
+			
+			StatusBar.ClearClipRect();
+		}
+
+		// [Ace] Range circles.
+		int units = RangeUnits.GetInt();
+		if (units > 0)
+		{
+			int divisions = RangeDivisions.GetInt();
+			for (int i = 1; i <= divisions; ++i)
+			{
+				string str = "";
+				switch (units)
+				{
+					case 1: str = StatusBar.FormatNumber(int(minScanDist / double(divisions) * i), 1, 4); break;
+					case 2: str = StatusBar.FormatNumber(int(minScanDist / double(divisions) / 37.0 * i), 1, 3).."m"; break;
+				}
+
+				// [Ace] Circle.
+				StatusBar.DrawImage("ZRRANGE", radarPos, drawFlags, alpha * 0.60, scale: (1.0, 1.0) * (i / double(divisions)), col: radCol);
+
+				// [Ace] Number.
+				StatusBar.DrawString(mMainFont, str, (radarPos.x - 1, radarPos.y + 2 - 60 / divisions * i), drawFlags | StatusBar.DI_TEXT_ALIGN_CENTER, Font.CR_WHITE, alpha * 0.60);
+			}
+		}
+
+		// --------------- CROSS ---------------
+
+		int CrossColor = 0;
+		switch (RadarMode[consoleplayer])
+		{
+			case Mode_Local: CrossColor = Font.CR_RED; break;
+			case Mode_Movement: CrossColor = Font.CR_YELLOW; break;
+			case Mode_Full: CrossColor = Font.CR_GREEN; break;
+		}
+		StatusBar.DrawString(mMainFont, "+", (radarPos.x - 4, radarPos.y - 4), drawFlags, CrossColor, alpha);
+
+		// --------------- ANGLE HANDS ---------------
+
+		if (angleLimit > 0 && angleLimit < 360)
+		{
+			StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
+			StatusBar.DrawImageRotated("ZRHANDL", radarPos, drawFlags, angleLimit / 2, alpha, col: radCol);
+
+			StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
+			StatusBar.DrawImageRotated("ZRHANDR", radarPos, drawFlags, -angleLimit / 2, alpha, col: radCol);
+			
+			StatusBar.ClearClipRect();
+		}
+
+		// --------------- BLIPS ---------------
+
+
+		// [Ace] This magic number ensures the blips scale correctly with distance.
+		// I think the number is supposed to be the radar's radius minus the blip's radius.
+		double scale = minScanDist / 58.60;
+		for (int i = 0; i < RadarBlips.Size(); ++i)
+		{
+			RadarBlip blip = RadarBlips[i];
+
+			// [Ace] arooкas is a god. This is non-negotiable.
+			double length = blip.DrawPos.Length();
+			if (speed > 0 && length / fullScanDist > fullScanLengthFac)
+			{
+				continue;
+			}
+
+			double outtaRangeFac = 1.0;
+			if (length > minScanDist)
+			{
+				outtaRangeFac = minScanDist / length;
+			}
+
+			double blipAlpha = alpha * (speed == 0 ? 1.0 : 1.0 - fullScanLengthFac + (length / fullScanDist));
+			// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
+			vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
+			StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, blipAlpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
+		}
+
+		// --------------- PRETEND WE WERE NEVER HERE ---------------
+
+		StatusBar.BeginHUD(1.0, false);
+		StatusBar.SetSize(StatusBar.RelTop, OriginalWidth, OriginalHeight);
 	}
 
 	// ----------------------------------------------------------

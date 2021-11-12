@@ -15,7 +15,7 @@ user int zradar_visibility = 2147483647;
 server int zradar_distance = 1000;
 server int zradar_overdistance = 1500;
 server int zradar_anglelimit = 360;
-server int zradar_refreshrate = 1;
+server int zradar_scanspeed = 24;
 
 server int zradar_validactors = 2147483647;
 
