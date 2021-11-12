@@ -197,7 +197,7 @@ class ZRadarMainHandler : EventHandler
 		{
 			RadarBlips.Clear();
 
-			int angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
+			double angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
 			if (angleLimit == 0)
 			{
 				angleLimit = players[consoleplayer].FOV;
@@ -412,7 +412,7 @@ class ZRadarMainHandler : EventHandler
 		double radarScale = Scale.GetFloat();
 
 		int visFlags = VisibilityFlags.GetInt();
-		int angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
+		double angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
 		if (angleLimit == 0)
 		{
 			angleLimit = players[consoleplayer].FOV;
