@@ -24,31 +24,26 @@ class RadarBlip
 		Col_Tan = 0XFFDBC9A4
 	}
 
+	Actor Other;
+	vector3 Diff;
 	vector2 DrawPos;
 	string Icon;
 	Color DrawCol;
 	vector2 DrawBox;
 	bool IsHostile;
+	ui bool Scanned;
 
 	static RadarBlip Create(PlayerPawn plr, Actor other, string iconNormal, Color drawCol, string iconBelow = "", string iconAbove = "", vector2 drawBox = (5, 5))
 	{
 		let blip = new('RadarBlip');
 
-		// [Ace] This is not level.Vec3Diff because then I'd have to flip the Z axis and screw that.
-		vector3 diff = (plr.pos.x - other.pos.x, plr.pos.y - other.pos.y, other.pos.z - plr.pos.z);
-
-		blip.DrawPos =
-		(
-			diff.x * cos(-plr.angle) - diff.y * sin(-plr.angle),
-			diff.x * sin(-plr.angle) + diff.y * cos(-plr.angle)
-		);
-
+		blip.Other = other;
 		blip.DrawCol = drawCol;
 		blip.DrawBox = drawBox;
 		blip.IsHostile = other.bISMONSTER && !other.bFRIENDLY;
 
 		// [Ace] Use the correct icon.
-		blip.Icon = diff.z <= -60 && iconBelow != "" ? iconBelow : (diff.z >= 60 && iconAbove != "" ? iconAbove : iconNormal);
+		blip.Icon = blip.Diff.z <= -60 && iconBelow != "" ? iconBelow : (blip.Diff.z >= 60 && iconAbove != "" ? iconAbove : iconNormal);
 
 		return blip;
 	}
@@ -151,11 +146,6 @@ class ZRadarMainHandler : EventHandler
 		int drainTime = int((35 * 60 * BatteryDrainTime.GetFloat()) / GetDrainMult());
 		int rechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
 		let plr = players[consoleplayer].mo;
-
-		if (!plr)
-		{
-			return;
-		}
 
 		if (!CheckRadarCondition(plr))
 		{
@@ -400,6 +390,7 @@ class ZRadarMainHandler : EventHandler
 		
 		mMainFont = HUDFont.Create(FontName);
 
+		let plr = players[consoleplayer].mo;
 		int OriginalWidth = StatusBar.HorizontalResolution;
 		int OriginalHeight = StatusBar.VerticalResolution;
 
@@ -513,12 +504,24 @@ class ZRadarMainHandler : EventHandler
 		{
 			RadarBlip blip = RadarBlips[i];
 
+			if (!blip.Scanned)
+			{
+				blip.Diff = (plr.pos.x - blip.other.pos.x, plr.pos.y - blip.other.pos.y, blip.other.pos.z - plr.pos.z);
+				blip.DrawPos = 
+				(
+					blip.Diff.x * cos(-plr.angle) - blip.Diff.y * sin(-plr.angle),
+					blip.Diff.x * sin(-plr.angle) + blip.Diff.y * cos(-plr.angle)
+				);
+			}
+
 			// [Ace] arooкas is a god. This is non-negotiable.
 			double length = blip.DrawPos.Length();
 			if (speed > 0 && length / fullScanDist > fullScanLengthFac)
 			{
 				continue;
 			}
+
+			blip.Scanned = true;
 
 			double outtaRangeFac = 1.0;
 			if (length > minScanDist)
