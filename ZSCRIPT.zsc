@@ -27,7 +27,7 @@ class RadarBlip
 	Actor Other;
 	vector3 Diff;
 	vector2 DrawPos;
-	string Icon;
+	string Icon, IconBelow, IconAbove;
 	Color DrawCol;
 	vector2 DrawBox;
 	bool IsHostile;
@@ -41,11 +41,16 @@ class RadarBlip
 		blip.DrawCol = drawCol;
 		blip.DrawBox = drawBox;
 		blip.IsHostile = other.bISMONSTER && !other.bFRIENDLY;
-
-		// [Ace] Use the correct icon.
-		blip.Icon = blip.Diff.z <= -60 && iconBelow != "" ? iconBelow : (blip.Diff.z >= 60 && iconAbove != "" ? iconAbove : iconNormal);
+		blip.Icon = iconNormal;
+		blip.IconBelow = iconBelow;
+		blip.IconAbove = iconAbove;
 
 		return blip;
+	}
+
+	ui string GetIcon()
+	{
+		return Diff.z <= -60 && IconBelow != "" ? IconBelow : (Diff.z >= 60 && IconAbove != "" ? IconAbove : Icon);
 	}
 }
 
@@ -531,7 +536,7 @@ class ZRadarMainHandler : EventHandler
 			double blipAlpha = alpha * (speed == 0 ? 1.0 : 1.0 - fullScanLengthFac + (length / fullScanDist));
 			// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
 			vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
-			StatusBar.DrawImage(blip.Icon, (finalPos.y, finalPos.x), drawFlags, blipAlpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
+			StatusBar.DrawImage(blip.GetIcon(), (finalPos.y, finalPos.x), drawFlags, blipAlpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
 		}
 
 		// --------------- PRETEND WE WERE NEVER HERE ---------------
