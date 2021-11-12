@@ -206,16 +206,10 @@ class ZRadarMainHandler : EventHandler
 					continue;
 				}
 
-				double angle = Actor.AbsAngle(plr.AngleTo(it.thing), plr.Angle);
-				bool isWithinScanAngle = angle <= max(45, angleLimit) / 2;
-
-				if (isWithinScanAngle)
+				RadarBlip blip = TryMakeBlip(RadarMode[consoleplayer], ValidActors.GetInt(), players[consoleplayer].mo, it.thing);
+				if (blip)
 				{
-					RadarBlip blip = TryMakeBlip(RadarMode[consoleplayer], ValidActors.GetInt(), players[consoleplayer].mo, it.thing);
-					if (blip)
-					{
-						RadarBlips.Push(blip);
-					}
+					RadarBlips.Push(blip);
 				}
 			}
 
@@ -506,13 +500,18 @@ class ZRadarMainHandler : EventHandler
 
 			if (!blip.Scanned)
 			{
+				if (Actor.AbsAngle(plr.AngleTo(blip.Other), plr.Angle) > angleLimit / 2)
+				{
+					continue;
+				}
+				
 				blip.Diff = (plr.pos.x - blip.other.pos.x, plr.pos.y - blip.other.pos.y, blip.other.pos.z - plr.pos.z);
 				blip.DrawPos = 
 				(
 					blip.Diff.x * cos(-plr.angle) - blip.Diff.y * sin(-plr.angle),
 					blip.Diff.x * sin(-plr.angle) + blip.Diff.y * cos(-plr.angle)
 				);
-			}
+			}	
 
 			// [Ace] arooкas is a god. This is non-negotiable.
 			double length = blip.DrawPos.Length();
