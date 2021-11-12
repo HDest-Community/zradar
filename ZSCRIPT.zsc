@@ -500,7 +500,7 @@ class ZRadarMainHandler : EventHandler
 
 			if (!blip.Scanned)
 			{
-				if (Actor.AbsAngle(plr.AngleTo(blip.Other), plr.Angle) > angleLimit / 2)
+				if (!blip.Other || Actor.AbsAngle(plr.AngleTo(blip.Other), plr.Angle) > angleLimit / 2)
 				{
 					continue;
 				}
