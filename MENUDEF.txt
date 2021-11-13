@@ -36,8 +36,8 @@ OptionMenu "ZRadarOptions"
 	StaticText ""
 	Slider "Scan Distance", "zradar_distance", 250, 10000, 50, 0
 	Slider "Overscan Distance", "zradar_overdistance", 250, 10000, 50, 0
-	StaticText "Actors outside of the normal distance but within overscan distance", "White"
-	StaticText "will stay at edge of the radar. This number must be larger than scan distance.", "White"
+	StaticText "Actors outside of the normal distance but within overscan distance will stay", "White"
+	StaticText "at edge of the radar. This number must be higher or equal to scan distance.", "White"
 	StaticText ""
 	Slider "Angle Limit", "zradar_anglelimit", 0, 360, 45, 0
 	StaticText "0 uses FOV.", "White"
