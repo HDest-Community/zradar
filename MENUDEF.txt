@@ -34,8 +34,8 @@ OptionMenu "ZRadarOptions"
 	Option "Range Units", "zradar_rangeunits", "RangeUnits"
 	Slider "Range Divisions", "zradar_rangedivisions", 2, 5, 1, 0
 	StaticText ""
-	Slider "Scan Distance", "zradar_distance", 250, 3000, 50, 0
-	Slider "Overscan Distance", "zradar_overdistance", 250, 3000, 50, 0
+	Slider "Scan Distance", "zradar_distance", 250, 10000, 50, 0
+	Slider "Overscan Distance", "zradar_overdistance", 250, 10000, 50, 0
 	StaticText "Actors outside of the normal distance but within overscan distance", "White"
 	StaticText "will stay at edge of the radar. This number must be larger than scan distance.", "White"
 	StaticText ""
