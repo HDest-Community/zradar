@@ -50,7 +50,7 @@ class RadarBlip
 
 	ui string GetIcon()
 	{
-		return Diff.z <= -60 && IconBelow != "" ? IconBelow : (Diff.z >= 60 && IconAbove != "" ? IconAbove : Icon);
+		return Diff.z <= -128 && IconBelow != "" ? IconBelow : (Diff.z >= 128 && IconAbove != "" ? IconAbove : Icon);
 	}
 }
 
