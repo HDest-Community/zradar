@@ -10,7 +10,7 @@ OptionMenu "ZRadarOptions"
 	Control "Change Radar Mode", "ChangeMode"
 	Option "Selection Mode", "zradar_selectionmode", "RadarSelection"
 	StaticText "The cross in the center indicates the current mode.", "White"
-	StaticText "Green - Full, Yellow - Movement, Red - Local", "White"
+	StaticText "Green - Full, Yellow - Movement", "White"
 	StaticText ""
 	Option "Default Radar Mode", "zradar_defmode", "DefaultRadarModes"
 	StaticText "The default mode is what the radar would switch to on new maps.", "White"
@@ -42,8 +42,8 @@ OptionMenu "ZRadarOptions"
 	Slider "Angle Limit", "zradar_anglelimit", 0, 360, 45, 0
 	StaticText "0 uses FOV.", "White"
 	StaticText ""
-	Slider "Scan Speed", "zradar_scanspeed", 0, 256, 8, 0
-	StaticText "The scan speed in map units. Total scan time is affected by (over)scan distance.", "White"
+	Slider "Scan Speed", "zradar_scanspeed", 0, 3, 0.05, 2
+	StaticText "The scan speed in revolutions per second.", "White"
 	StaticText ""
 	FlagOption "$ZRADAR_TOGGLE_1", "zradar_validactors", "YesNo", 0
 	FlagOption "$ZRADAR_TOGGLE_2", "zradar_validactors", "YesNo", 1
@@ -74,7 +74,7 @@ OptionMenu "ZRadarOptions"
 	StaticText ""
 	StaticText "Enabling the battery allows for a more immersive experience.", "DarkGray"
 	StaticText "More powerful modes drain more power. The Drain Time option is for Full mode.", "White"
-	StaticText "Movement mode gives you 50% more time, Local - 100%", "White"
+	StaticText "Movement mode gives you 100% more time", "White"
 	StaticText "As you lose power, the radar will begin to lose opacity.", "White"
 	StaticText "Turn off the radar to charge it.", "Fire"
 }
@@ -84,7 +84,6 @@ OptionValue "DefaultRadarModes"
 	0, "Disabled"
 	1, "Full"
 	2, "Movement"
-	3, "Local"
 }
 
 OptionValue "RadarSelection"
@@ -92,7 +91,6 @@ OptionValue "RadarSelection"
 	-1, "Cycle"
 	1, "Full"
 	2, "Movement"
-	3, "Local"
 }
 
 OptionValue "RadarPosition"

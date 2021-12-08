@@ -31,12 +31,14 @@ class RadarBlip
 	Color DrawCol;
 	vector2 DrawBox;
 	bool IsHostile;
-	ui bool Scanned;
+	bool Scanned;
+	double Alpha;
 
 	static RadarBlip Create(PlayerPawn plr, Actor other, string iconNormal, Color drawCol, string iconBelow = "", string iconAbove = "", vector2 drawBox = (5, 5))
 	{
 		let blip = new('RadarBlip');
 
+		blip.Alpha = 1.0;
 		blip.Other = other;
 		blip.DrawCol = drawCol;
 		blip.DrawBox = drawBox;
@@ -88,12 +90,13 @@ class ZRadarMainHandler : EventHandler
 	private transient CVar BatteryDrainTime;
 	private transient CVar BatteryRechargeTime;
 
-	private transient Array<RadarBlip> RadarBlips;
 	int RadarMode[MAXPLAYERS]; // [Ace] This should have been called RadarState.
 	private int BatteryPower[MAXPLAYERS];
 	private int AccumulatedDrain[MAXPLAYERS];
 
-	private transient int ScanLength;
+	private transient Array<RadarBlip> RadarBlips;
+	private transient double ScanAngle;
+	private transient int LastScanIndex;
 
 	static void DestroyMainHandler()
 	{
@@ -185,50 +188,90 @@ class ZRadarMainHandler : EventHandler
 			}
 		}
 
-		// [Ace] This is where blips are updated.
-		int fullScanDist = max(ScanDistance.Getint(), OverscanDistance.GetInt());
-
-		if (ScanLength == fullScanDist * 2)
+		if (RadarMode[consoleplayer] > Mode_Disabled)
 		{
-			ScanLength = 0;
-		}
+			double speed = GetScanSpeed();
 
-		if (RadarMode[consoleplayer] > Mode_Disabled && ScanLength == 0)
-		{
-			RadarBlips.Clear();
-
-			double angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
-			if (angleLimit == 0)
+			// [Ace] Blip cleanup.
+			for (int i = RadarBlips.Size() - 1; i >= 0; --i)
 			{
-				angleLimit = players[consoleplayer].FOV;
-			}
-
-			BlockThingsIterator it = BlockThingsIterator.Create(plr, fullScanDist);
-			while (it.Next())
-			{
-				if (it.thing == players[consoleplayer].mo || it.thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.thing) - it.thing.Radius + it.thing.vel.length() > fullScanDist)
+				RadarBlip blip = RadarBlips[i];
+				if (!blip)
 				{
+					RadarBlips.Delete(i);
 					continue;
 				}
 
-				RadarBlip blip = TryMakeBlip(RadarMode[consoleplayer], ValidActors.GetInt(), players[consoleplayer].mo, it.thing);
-				if (blip)
+				if (speed > 0 && blip.Scanned)
 				{
-					RadarBlips.Push(blip);
+					blip.Alpha -= speed / 360.0;
+					if (blip.Alpha <= 0)
+					{
+						blip.Destroy();
+						RadarBlips.Delete(i);
+						continue;
+					}
 				}
 			}
 
-			int refSoundContact = RefreshSoundContact.GetInt();
-			int refSoundClear = RefreshSoundClear.GetInt();
-			if (plr && RefSoundContact > 0)
+			int curScanIndex = int(abs(ceil(ScanAngle / 90.0)));
+			if (speed == 0 && level.time % 35 == 0 || speed > 0 && (ScanAngle == 0 || LastScanIndex < curScanIndex))
 			{
-				string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..refSoundContact : "Radar/RefreshSound/Clear"..refSoundClear;
-				plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RefreshSoundVolume.GetFloat());
+				// [Ace] Actively clear array because the blips will not fade away on their own.
+				if (speed == 0)
+				{
+					RadarBlips.Clear();
+				}
+				else
+				{
+					LastScanIndex++;
+				}
+
+				int fullScanDist = max(ScanDistance.Getint(), OverscanDistance.GetInt());
+				BlockThingsIterator it = BlockThingsIterator.Create(plr, fullScanDist);
+				while (it.Next())
+				{
+					if (it.thing == players[consoleplayer].mo || it.thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.thing) - it.thing.Radius + it.thing.vel.length() > fullScanDist)
+					{
+						continue;
+					}
+
+					bool blipExists = false;
+					for (int i = 0; i < RadarBlips.Size(); ++i)
+					{
+						if (RadarBlips[i].Other == it.thing && RadarBlips[i].Alpha > 0.25)
+						{
+							blipExists = true;
+							break;
+						}
+					}
+
+					if (blipExists)
+					{
+						continue;
+					}
+
+					RadarBlip blip = TryMakeBlip(RadarMode[consoleplayer], ValidActors.GetInt(), players[consoleplayer].mo, it.thing);
+					if (blip)
+					{
+						RadarBlips.Push(blip);
+					}
+				}
+
+				int refSoundContact = RefreshSoundContact.GetInt();
+				int refSoundClear = RefreshSoundClear.GetInt();
+				if (plr && RefSoundContact > 0 && (speed == 0 || curScanIndex % 2 == 0))
+				{
+					string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..refSoundContact : "Radar/RefreshSound/Clear"..refSoundClear;
+					plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RefreshSoundVolume.GetFloat());
+				}
+			}
+
+			if (speed > 0)
+			{
+				ScanAngle -= speed;
 			}
 		}
-
-		int speed = ScanSpeed.GetInt();
-		ScanLength = speed == 0 ? 0 : min(ScanLength + speed, fullScanDist * 2);
 	}
 
 	override void NetworkProcess(ConsoleEvent e)
@@ -236,8 +279,10 @@ class ZRadarMainHandler : EventHandler
 		if (e.Name ~== "ChangeRadarMode")
 		{
 			// [Ace] Force radar refresh when you switch modes.
-			ScanLength = 0;
 			int selMode = SelectionMode.GetInt();
+			ScanAngle = 0;
+			LastScanIndex = 0;
+			RadarBlips.Clear();
 			
 			// [Ace] Cycle modes.
 			if (selMode == -1)
@@ -291,7 +336,7 @@ class ZRadarMainHandler : EventHandler
 		bool movement = mode == Mode_Movement && (other.vel.length() > 0 || other.target || other.master is 'PlayerPawn');
 		bool local = mode == Mode_Local && plr.CheckSight(other);
 
-		if (full || movement || local)
+		if (full || movement)
 		{
 			if (other.bISMONSTER)
 			{
@@ -382,7 +427,7 @@ class ZRadarMainHandler : EventHandler
 
 	private ui void DrawRadar()
 	{
-		if (GameState != GS_LEVEL || AutomapActive || RadarMode[consoleplayer] == Mode_Disabled)
+		if (GameState != GS_LEVEL || AutomapActive || RadarMode[consoleplayer] == Mode_Disabled) // [Ace] This should become paused > 0 when a new stable comes out.
 		{
 			return;
 		}
@@ -396,17 +441,16 @@ class ZRadarMainHandler : EventHandler
 		double radarScale = Scale.GetFloat();
 
 		int visFlags = VisibilityFlags.GetInt();
+
 		double angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
 		if (angleLimit == 0)
 		{
 			angleLimit = players[consoleplayer].FOV;
 		}
+
 		int fullScanDist = max(ScanDistance.GetInt(), OverscanDistance.GetInt());
 		int minScanDist = min(ScanDistance.GetInt(), OverscanDistance.GetInt());
-		int speed = ScanSpeed.GetInt();
-
-		double fullScanLengthFac = ScanLength / double(fullScanDist);
-		double minScanLengthFac = ScanLength / double(minScanDist);
+		double speed = GetScanSpeed();
 
 		StatusBar.BeginHUD(1.0, true);
 		StatusBar.SetSize(StatusBar.RelTop, int(640 / radarScale), int(480 / radarScale));
@@ -434,17 +478,9 @@ class ZRadarMainHandler : EventHandler
 		}
 
 		// [Ace] Scan circle.
-		if (visFlags & 4 && minScanLengthFac <= 1.0 && speed > 0)
+		if (visFlags & 4 && speed > 0)
 		{
-			vector2 scanScale = (1.0, 1.0) / minScanLengthFac;
-
-			StatusBar.SetClipRect(radarPos.x - 60, radarPos.y - 60, 60, 120, drawFlags);
-			StatusBar.DrawImageRotated("ZRSCANL", radarPos, drawFlags, angleLimit / 2, alpha, scanScale, col: radCol);
-
-			StatusBar.SetClipRect(radarPos.x, radarPos.y - 60, 60, 120, drawFlags);
-			StatusBar.DrawImageRotated("ZRSCANR", radarPos, drawFlags, -angleLimit / 2, alpha, scanScale, col: radCol);
-			
-			StatusBar.ClearClipRect();
+			StatusBar.DrawImageRotated("ZRSCAN", radarPos, drawFlags, ScanAngle, alpha, col: radCol);
 		}
 
 		// [Ace] Range circles.
@@ -495,48 +531,56 @@ class ZRadarMainHandler : EventHandler
 
 		// --------------- BLIPS ---------------
 
-
-		// [Ace] This magic number ensures the blips scale correctly with distance.
-		// I think the number is supposed to be the radar's radius minus the blip's radius.
-		double scale = minScanDist / 58.60;
 		for (int i = 0; i < RadarBlips.Size(); ++i)
 		{
 			RadarBlip blip = RadarBlips[i];
-
-			if (!blip.Scanned)
+			if (!blip)
 			{
-				if (!blip.Other || Actor.AbsAngle(plr.AngleTo(blip.Other), plr.Angle) > angleLimit / 2)
+				continue;
+			}
+
+			if (!blip.Scanned || speed == 0)
+			{
+				if (!blip.Other)
+				{
+					continue;
+				}
+
+				if (Actor.AbsAngle(plr.AngleTo(blip.Other), plr.angle) > angleLimit / 2 || speed > 0 && Actor.AbsAngle(plr.AngleTo(blip.Other), ScanAngle + plr.angle) > speed)
 				{
 					continue;
 				}
 				
-				blip.Diff = (plr.pos.x - blip.other.pos.x, plr.pos.y - blip.other.pos.y, blip.other.pos.z - plr.pos.z);
+				blip.Diff = (plr.pos.x - blip.Other.pos.x, plr.pos.y - blip.Other.pos.y, blip.Other.pos.z - plr.pos.z);
 				blip.DrawPos = 
 				(
 					blip.Diff.x * cos(-plr.angle) - blip.Diff.y * sin(-plr.angle),
 					blip.Diff.x * sin(-plr.angle) + blip.Diff.y * cos(-plr.angle)
 				);
-			}	
-
-			// [Ace] arooкas is a god. This is non-negotiable.
-			double length = blip.DrawPos.Length();
-			if (speed > 0 && length / fullScanDist > fullScanLengthFac)
-			{
-				continue;
 			}
 
 			blip.Scanned = true;
 
+			// [Ace] Directly nuke it if it goes out of scan range.
+			double length = blip.DrawPos.Length();
+			if (length > fullScanDist)
+			{
+				blip.Destroy();
+				continue;
+			}
+
 			double outtaRangeFac = 1.0;
-			if (length > minScanDist)
+			if (length > minScanDist) // [Ace] arooкas is a god. This is non-negotiable.
 			{
 				outtaRangeFac = minScanDist / length;
 			}
 
-			double blipAlpha = alpha * (speed == 0 ? 1.0 : 1.0 - fullScanLengthFac + (length / fullScanDist));
 			// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
-			vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / scale) + (radarPos.y, radarPos.x);
-			StatusBar.DrawImage(blip.GetIcon(), (finalPos.y, finalPos.x), drawFlags, blipAlpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
+			// The magic number ensures the blips scale correctly with distance.
+			// I think the number is supposed to be the radar's radius minus the blip's radius.
+			vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / (minScanDist / 58.60)) + (radarPos.y, radarPos.x);
+			
+			StatusBar.DrawImage(blip.GetIcon(), (finalPos.y, finalPos.x), drawFlags, alpha * blip.Alpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
 		}
 
 		// --------------- PRETEND WE WERE NEVER HERE ---------------
@@ -548,6 +592,13 @@ class ZRadarMainHandler : EventHandler
 	// ----------------------------------------------------------
 	// INFORMATION
 	// ----------------------------------------------------------
+
+	// [Ace] This returns angle change per tic and not the raw revolutions per tic.
+	protected clearscope double GetScanSpeed()
+	{
+		double speed = ScanSpeed.GetFloat();
+		return speed * (360.0 / TICRATE);
+	}
 
 	protected virtual ui double GetAlpha()
 	{
