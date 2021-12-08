@@ -260,7 +260,7 @@ class ZRadarMainHandler : EventHandler
 
 				int refSoundContact = RefreshSoundContact.GetInt();
 				int refSoundClear = RefreshSoundClear.GetInt();
-				if (plr && RefSoundContact > 0 && (speed == 0 || curScanIndex % 2 == 0))
+				if (plr && RefSoundContact > 0 && (speed == 0 || curScanIndex % 4 == 0))
 				{
 					string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..refSoundContact : "Radar/RefreshSound/Clear"..refSoundClear;
 					plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RefreshSoundVolume.GetFloat());
