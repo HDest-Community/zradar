@@ -461,7 +461,12 @@ class ZRadarMainHandler : EventHandler
 
 		// --------------- CIRCLE ---------------
 
-		Color radCol = 0xFF000000 | RadarColor.GetInt();
+		int rawCol = RadarColor.GetInt();
+		if (rawCol == 0)
+		{
+			rawCol = plr.player.GetDisplayColor();
+		}
+		Color radCol = 0xFF000000 | rawCol;
 
 		vector2 radarPos = (OffsetX.GetInt(), OffsetY.GetInt());
 		int drawFlags = GetAlignmentFlags(radarPos);
