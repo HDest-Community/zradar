@@ -84,6 +84,7 @@ OptionValue "DefaultRadarModes"
 	0, "Disabled"
 	1, "Full"
 	2, "Movement"
+	3, "Local"
 }
 
 OptionValue "RadarSelection"
@@ -91,6 +92,7 @@ OptionValue "RadarSelection"
 	-1, "Cycle"
 	1, "Full"
 	2, "Movement"
+	3, "Local"
 }
 
 OptionValue "RadarPosition"
