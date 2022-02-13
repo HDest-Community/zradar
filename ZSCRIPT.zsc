@@ -333,7 +333,7 @@ class ZRadarMainHandler : EventHandler
 
 		// [Ace] Pick the ones you want to check in each condition below.
 		bool full = mode == Mode_Full;
-		bool movement = mode == Mode_Movement && (other.vel.length() > 0 || other.target || other.master is 'PlayerPawn');
+		bool movement = mode == Mode_Movement && (other.vel.length() > 0 || (other.pos - other.Prev).length() > 0 || other.master is 'PlayerPawn');
 		bool local = mode == Mode_Local && plr.CheckSight(other);
 
 		if (full || movement)
