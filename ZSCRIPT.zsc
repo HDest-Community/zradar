@@ -308,7 +308,7 @@ class ZRadarMainHandler : EventHandler
 
 		RadarMode[plrIndex] = mode;
 
-		if (!silent)
+		if (!silent && plrIndex == consoleplayer)
 		{
 			string Message = "";
 			switch (mode)
