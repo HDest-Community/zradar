@@ -301,7 +301,7 @@ class ZRadarMainHandler : EventHandler
 	private void SetRadarMode(int plrIndex, int mode, bool silent = false)
 	{
 		let plr = players[plrIndex].mo;
-		if (!plr || RadarMode[plrIndex] == Mode_Disabled && mode > Mode_Disabled && !CheckRadarCondition(plr) || RadarMode[plrIndex] == mode)
+		if (!plr || plr.Health <= 0 || RadarMode[plrIndex] == Mode_Disabled && mode > Mode_Disabled && !CheckRadarCondition(plr) || RadarMode[plrIndex] == mode)
 		{
 			return;
 		}
