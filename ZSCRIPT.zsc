@@ -151,7 +151,7 @@ class ZRadarMainHandler : EventHandler
 			return;
 		}
 
-		int drainTime = int((35 * 60 * BatteryDrainTime.GetFloat()) / GetDrainMult());
+		int drainTime = int((35 * 60 * BatteryDrainTime.GetFloat()) / GetDrainMult(consoleplayer));
 		int rechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
 		let plr = players[consoleplayer].mo;
 
@@ -617,9 +617,9 @@ class ZRadarMainHandler : EventHandler
 	}
 	protected virtual clearscope bool CheckRadarCondition(PlayerPawn plr) { return true; }
 
-	virtual double GetDrainMult() const
+	virtual double GetDrainMult(int playerIndex) const
 	{
-		switch (RadarMode[consoleplayer])
+		switch (RadarMode[playerIndex])
 		{
 			case Mode_Local: return 0.5;
 			case Mode_Movement: return 0.66;
