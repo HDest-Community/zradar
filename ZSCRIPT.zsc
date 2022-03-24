@@ -413,7 +413,7 @@ class ZRadarMainHandler : EventHandler
 	{
 		if (!DrawOverHud.GetBool())
 		{
-			DrawRadar();
+			DrawRadar(e.Camera);
 		}
 	}
 
@@ -421,20 +421,20 @@ class ZRadarMainHandler : EventHandler
 	{
 		if (DrawOverHud.GetBool())
 		{
-			DrawRadar();
+			DrawRadar(e.Camera);
 		}
 	}
 
-	private ui void DrawRadar()
+	private ui void DrawRadar(Actor whomstve)
 	{
-		if (GameState != GS_LEVEL || AutomapActive || RadarMode[consoleplayer] == Mode_Disabled) // [Ace] This should become paused > 0 when a new stable comes out.
+		if (GameState != GS_LEVEL || AutomapActive || RadarMode[consoleplayer] == Mode_Disabled || whomstve != players[consoleplayer].mo) // [Ace] This should become paused > 0 when a new stable comes out.
 		{
 			return;
 		}
 		
 		mMainFont = HUDFont.Create(FontName);
 
-		let plr = players[consoleplayer].mo;
+		let plr = PlayerPawn(whomstve);
 		int OriginalWidth = StatusBar.HorizontalResolution;
 		int OriginalHeight = StatusBar.VerticalResolution;
 
@@ -445,7 +445,7 @@ class ZRadarMainHandler : EventHandler
 		double angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
 		if (angleLimit == 0)
 		{
-			angleLimit = players[consoleplayer].FOV;
+			angleLimit = plr.player.FOV;
 		}
 
 		int fullScanDist = max(ScanDistance.GetInt(), OverscanDistance.GetInt());
@@ -513,7 +513,7 @@ class ZRadarMainHandler : EventHandler
 		// --------------- CROSS ---------------
 
 		int CrossColor = 0;
-		switch (RadarMode[consoleplayer])
+		switch (RadarMode[plr.PlayerNumber()])
 		{
 			case Mode_Local: CrossColor = Font.CR_RED; break;
 			case Mode_Movement: CrossColor = Font.CR_YELLOW; break;
