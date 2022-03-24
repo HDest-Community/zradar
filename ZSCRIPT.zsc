@@ -280,9 +280,6 @@ class ZRadarMainHandler : EventHandler
 		{
 			// [Ace] Force radar refresh when you switch modes.
 			int selMode = SelectionMode.GetInt();
-			ScanAngle = 0;
-			LastScanIndex = 0;
-			RadarBlips.Clear();
 			
 			// [Ace] Cycle modes.
 			if (selMode == -1)
@@ -322,6 +319,10 @@ class ZRadarMainHandler : EventHandler
 			plr.A_Print(Message, 1);
 			plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 		}
+
+		ScanAngle = 0;
+		LastScanIndex = 0;
+		RadarBlips.Clear();
 	}
 
 	protected virtual RadarBlip TryMakeBlip(int mode, int toggles, PlayerPawn plr, Actor other)
