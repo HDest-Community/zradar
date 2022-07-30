@@ -17,3 +17,6 @@ Saegiru
 
 AvP
 - Some of the radar refresh sounds.
+
+arookas
+- Inspiration for FOV-bound scanning, among other things. Check out his own radar, aradar! https://forum.zdoom.org/viewtopic.php?t=73461&p=1203464
