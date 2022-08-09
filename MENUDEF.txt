@@ -116,6 +116,7 @@ OptionValue "RangeUnits"
 	0, "Disabled"
 	1, "Map Units"
 	2, "Hideous Destructor Meters"
+	3, "Deathstrider Meters"
 }
 
 OptionValue "RadarRefreshSoundContact"
