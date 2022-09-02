@@ -21,7 +21,8 @@ class RadarBlip
 		Col_Blue = 0xFF3366FF,
 		Col_Purple = 0xFF7755FF,
 		Col_Pink = 0xFFFF55FF,
-		Col_Tan = 0XFFDBC9A4
+		Col_Tan = 0XFFDBC9A4,
+		Col_DarkPurple = 0xFF310070
 	}
 
 	Actor Other;
