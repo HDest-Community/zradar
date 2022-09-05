@@ -4,7 +4,6 @@ enum RMode
 {
 	Mode_Disabled,
 	Mode_Full,
-	Mode_Movement,
 	Mode_Local
 }
 
@@ -313,7 +312,6 @@ class ZRadarMainHandler : EventHandler
 			{
 				case Mode_Disabled: Message = "\c[Orange]Scanner Deactivated\c-"; break;
 				case Mode_Full: Message = "\c[Green]Full Scanner Activated\c-"; break;
-				case Mode_Movement: Message = "\c[Yellow]Movement Scanner Activated\c-"; break;
 				case Mode_Local: Message = "\c[Red]Local Scanner Activated\c-"; break;	
 			}
 
@@ -335,10 +333,9 @@ class ZRadarMainHandler : EventHandler
 
 		// [Ace] Pick the ones you want to check in each condition below.
 		bool full = mode == Mode_Full;
-		bool movement = mode == Mode_Movement && (other.vel.length() > 0 || (other.pos - other.Prev).length() > 0 || other.master is 'PlayerPawn');
 		bool local = mode == Mode_Local && plr.CheckSight(other);
 
-		if (full || movement)
+		if (full || local)
 		{
 			if (other.bISMONSTER)
 			{
@@ -368,7 +365,7 @@ class ZRadarMainHandler : EventHandler
 				return RadarBlip.Create(plr, other, "BLPDOT", RadarBlip.Col_Green, "BLPBELOW", "BLPABOVE");
 			}
 		}
-		if (full || mode == Mode_Movement || local)
+		if (full || local)
 		{
 			if (toggles & 1 << 3 && other is 'Health')
 			{
@@ -519,7 +516,6 @@ class ZRadarMainHandler : EventHandler
 		switch (RadarMode[plr.PlayerNumber()])
 		{
 			case Mode_Local: CrossColor = Font.CR_RED; break;
-			case Mode_Movement: CrossColor = Font.CR_YELLOW; break;
 			case Mode_Full: CrossColor = Font.CR_GREEN; break;
 		}
 		StatusBar.DrawString(mMainFont, "+", (radarPos.x - 4, radarPos.y - 4), drawFlags, CrossColor, alpha);
@@ -625,7 +621,6 @@ class ZRadarMainHandler : EventHandler
 		switch (RadarMode[playerIndex])
 		{
 			case Mode_Local: return 0.5;
-			case Mode_Movement: return 0.66;
 			default: return 1.0;
 		}
 	}
