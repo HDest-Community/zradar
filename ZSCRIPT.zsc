@@ -284,7 +284,7 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] Cycle modes.
 			if (selMode == -1)
 			{
-				SetRadarMode(e.Player, (RadarMode[e.Player] + 1) % 4);
+				SetRadarMode(e.Player, (RadarMode[e.Player] + 1) % (Mode_Local + 1));
 			}
 
 			// [Ace] Or toggle between disabled and the selected mode.
