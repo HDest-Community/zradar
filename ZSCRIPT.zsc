@@ -341,7 +341,7 @@ class ZRadarMainHandler : EventHandler
 
 		if (full || local)
 		{
-			if (other.bISMONSTER)
+			if (other.bISMONSTER && !other.bNEVERTARGET)
 			{
 				if (toggles & 1 && !other.bFRIENDLY)
 				{
