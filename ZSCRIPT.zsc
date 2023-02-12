@@ -319,10 +319,14 @@ class ZRadarMainHandler : EventHandler
 			plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
 		}
 
+		OnModeChanged(plr, mode);
+
 		ScanAngle = 0;
 		LastScanIndex = 0;
 		RadarBlips.Clear();
 	}
+
+	protected virtual void OnModeChanged(PlayerPawn plr, int newMode) {}
 
 	protected virtual RadarBlip TryMakeBlip(int mode, int toggles, PlayerPawn plr, Actor other)
 	{
@@ -616,9 +620,9 @@ class ZRadarMainHandler : EventHandler
 	}
 	protected virtual clearscope bool CheckRadarCondition(PlayerPawn plr) { return true; }
 
-	virtual double GetDrainMult(int playerIndex) const
+	virtual double GetDrainMult(int plrIndex) const
 	{
-		switch (RadarMode[playerIndex])
+		switch (RadarMode[plrIndex])
 		{
 			case Mode_Local: return 0.5;
 			default: return 1.0;
