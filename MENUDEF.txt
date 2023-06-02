@@ -17,8 +17,8 @@ OptionMenu "ZRadarOptions"
 	StaticText ""
 	Option "Draw Over HUD", "zradar_drawoverhud", "YesNo"
 	StaticText ""
-	Slider "Offset X", "zradar_offset_x", -500, 500, 5, 0
-	Slider "Offset Y", "zradar_offset_y", -500, 500, 5, 0
+	Slider "Offset X", "zradar_offset_x", -1000, 1000, 5, 0
+	Slider "Offset Y", "zradar_offset_y", -1000, 1000, 5, 0
 	StaticText "The radar is positioned in different parts of the screen depending on the number.", "White"
 	StaticText "For X: Positive - left. Negative - right.", "White"
 	StaticText "For Y: Positive - top. Negative - bottom.", "White"
