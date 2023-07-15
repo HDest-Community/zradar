@@ -49,7 +49,10 @@ class RadarBlip
 
 		return blip;
 	}
-
+	ui string GetIcon()
+		{
+			return Diff.z <= -128 && IconBelow != "" ? IconBelow : (Diff.z >= 128 && IconAbove != "" ? IconAbove : Icon);
+		}
 }
 
 class ZRadarMainHandler : EventHandler
@@ -583,6 +586,8 @@ class ZRadarMainHandler : EventHandler
 			// The magic number ensures the blips scale correctly with distance.
 			// I think the number is supposed to be the radar's radius minus the blip's radius.
 			vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / (minScanDist / 58.60)) + (radarPos.y, radarPos.x);
+
+			StatusBar.DrawImage(blip.GetIcon(), (finalPos.y, finalPos.x), drawFlags, alpha * blip.Alpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
 		}
 
 		// --------------- PRETEND WE WERE NEVER HERE ---------------
