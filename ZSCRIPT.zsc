@@ -364,13 +364,10 @@ class ZRadarMainHandler : EventHandler
 					return RadarBlip.Create(plr, other, "BLPDOT", RadarBlip.Col_Cyan, "BLPBELOW", "BLPABOVE");
 				}
 			}
-			if (toggles & 1 << 2 && other is "PlayerPawn" && other.player)
+			if (toggles & 1 << 2 && other.Player && other.Player.mo == other)
 			{
 				return RadarBlip.Create(plr, other, "BLPDOT", RadarBlip.Col_Green, "BLPBELOW", "BLPABOVE");
 			}
-		}
-		if (full || local)
-		{
 			if (toggles & 1 << 3 && other is 'Health')
 			{
 				return RadarBlip.Create(plr, other, "BLPCROSS", RadarBlip.Col_Red, drawBox: (4, 4));
