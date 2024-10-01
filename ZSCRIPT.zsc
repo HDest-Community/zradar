@@ -585,7 +585,7 @@ class ZRadarMainHandler : EventHandler
 			// I think the number is supposed to be the radar's radius minus the blip's radius.
 			vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / (minScanDist / 58.60)) + (radarPos.y, radarPos.x);
 			
-			StatusBar.DrawImage(blip.GetIcon(), (finalPos.y, finalPos.x), drawFlags, alpha * blip.Alpha * (outtaRangeFac ** 3), blip.DrawBox, col: blip.DrawCol);
+			StatusBar.DrawImage(blip.GetIcon(), (finalPos.y, finalPos.x), drawFlags, alpha * blip.Alpha * max(0.5, outtaRangeFac ** 2.5), blip.DrawBox, col: blip.DrawCol);
 		}
 
 		// --------------- PRETEND WE WERE NEVER HERE ---------------
