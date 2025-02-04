@@ -62,41 +62,42 @@ class ZRadarMainHandler : EventHandler
 	// CORE
 	// ----------------------------------------------------------
 
-	private transient CVar DefaultRadarMode;
-	private transient CVar SelectionMode;
+	protected transient CVar DefaultRadarMode;
+	protected transient CVar SelectionMode;
 
-	private transient CVar DrawOverHud;
-	private transient CVar OffsetX;
-	private transient CVar OffsetY;
-	private transient CVar VisibilityFlags;
-	private transient CVar Scale;
-	private transient CVar Opacity;
-	private transient CVar RadarColor;
-	private transient CVar RangeUnits;
-	private transient CVar RangeDivisions;
+	protected transient CVar DrawOverHud;
+	protected transient CVar OffsetX;
+	protected transient CVar OffsetY;
+	protected transient CVar VisibilityFlags;
+	protected transient CVar Scale;
+	protected transient CVar Opacity;
+	protected transient CVar RadarColor;
+	protected transient CVar RangeUnits;
+	protected transient CVar RangeDivisions;
 
 	protected transient CVar ScanDistance;
 	protected transient CVar OverscanDistance;
 	protected transient CVar AngleLimit;
 	protected transient CVar ScanSpeed;
 
-	private transient CVar ValidActors;
+	protected transient CVar ValidActors;
 
-	private transient CVar RefreshSoundContact;
-	private transient CVar RefreshSoundClear;
-	private transient CVar RefreshSoundVolume;
+	protected transient CVar RefreshSoundContact;
+	protected transient CVar RefreshSoundClear;
+	protected transient CVar RefreshSoundVolume;
 
-	private transient CVar BatteryEnabled;
-	private transient CVar BatteryDrainTime;
-	private transient CVar BatteryRechargeTime;
+	protected transient CVar BatteryEnabled;
+	protected transient CVar BatteryDrainTime;
+	protected transient CVar BatteryRechargeTime;
 
 	int RadarMode[MAXPLAYERS]; // [Ace] This should have been called RadarState.
-	private int BatteryPower[MAXPLAYERS];
-	private int AccumulatedDrain[MAXPLAYERS];
+	protected int BatteryPower[MAXPLAYERS];
+	protected int AccumulatedDrain[MAXPLAYERS];
 
-	private transient Array<RadarBlip> RadarBlips;
-	private transient double ScanAngle;
-	private transient int LastScanIndex;
+	protected transient Array<RadarBlip> RadarBlips;
+	protected transient double ScanAngle;
+	protected transient int LastScanIndex;
+	protected transient int LastRevolutions;
 
 	static void DestroyMainHandler()
 	{
@@ -214,6 +215,16 @@ class ZRadarMainHandler : EventHandler
 				}
 			}
 
+			if (speed > 0)
+			{
+				int revolutions = int(ScanAngle / (speed * TICRATE));
+				if (revolutions > LastRevolutions)
+				{
+					LastRevolutions = revolutions;
+					OnRevolution(plr);
+				}
+			}
+
 			int curScanIndex = int(abs(ceil(ScanAngle / 90.0)));
 			if (speed == 0 && level.time % 35 == 0 || speed > 0 && (ScanAngle == 0 || LastScanIndex < curScanIndex))
 			{
@@ -295,7 +306,7 @@ class ZRadarMainHandler : EventHandler
 		}
 	}
 
-	private void SetRadarMode(int plrIndex, int mode, bool silent = false)
+	protected void SetRadarMode(int plrIndex, int mode, bool silent = false)
 	{
 		let plr = players[plrIndex].mo;
 		if (!plr || plr.Health <= 0 || RadarMode[plrIndex] == Mode_Disabled && mode > Mode_Disabled && !CheckRadarCondition(plr) || RadarMode[plrIndex] == mode)
@@ -327,6 +338,7 @@ class ZRadarMainHandler : EventHandler
 	}
 
 	protected virtual void OnModeChanged(PlayerPawn plr, int newMode) {}
+	protected virtual void OnRevolution(PlayerPawn plr) {}
 
 	protected virtual RadarBlip TryMakeBlip(int mode, int toggles, PlayerPawn plr, Actor other)
 	{
@@ -407,7 +419,7 @@ class ZRadarMainHandler : EventHandler
 
 	const FontName = "ZRDRFONT";
 
-	private transient ui HUDFont mMainFont;
+	protected transient ui HUDFont mMainFont;
 
 	override void RenderUnderlay(RenderEvent e)
 	{
@@ -425,9 +437,9 @@ class ZRadarMainHandler : EventHandler
 		}
 	}
 
-	private ui void DrawRadar(Actor whomstve)
+	protected ui void DrawRadar(Actor whomstve)
 	{
-		if (GameState != GS_LEVEL || AutomapActive || RadarMode[consoleplayer] == Mode_Disabled || whomstve != players[consoleplayer].mo) // [Ace] This should become paused > 0 when a new stable comes out.
+		if (GameState != GS_LEVEL || AutomapActive || RadarMode[consoleplayer] == Mode_Disabled || whomstve != players[consoleplayer].mo)
 		{
 			return;
 		}
@@ -599,7 +611,7 @@ class ZRadarMainHandler : EventHandler
 	// ----------------------------------------------------------
 
 	// [Ace] This returns angle change per tic and not the raw revolutions per tic.
-	protected clearscope double GetScanSpeed()
+	clearscope double GetScanSpeed()
 	{
 		double speed = ScanSpeed.GetFloat();
 		return speed * (360.0 / TICRATE);
@@ -626,7 +638,7 @@ class ZRadarMainHandler : EventHandler
 		}
 	}
 
-	private clearscope int GetHostileBlipCount()
+	protected clearscope int GetHostileBlipCount()
 	{
 		int blips = 0;
 		for (int i = 0; i < RadarBlips.Size(); ++i)
@@ -639,7 +651,7 @@ class ZRadarMainHandler : EventHandler
 		return blips;
 	}
 
-	private ui int GetAlignmentFlags(vector2 offsets) const
+	protected ui int GetAlignmentFlags(vector2 offsets) const
 	{
 		int AlignFlags = 0;
 		if (offsets.x > 0)
