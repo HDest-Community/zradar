@@ -178,45 +178,48 @@ struct ZRadarData play
 					LastScanIndex++;
 				}
 
-				Handler.Actors.ReInit();
-
-				int fullScanDist = max(zradar_distance, zradar_overdistance);
-				Actor a = null;
-				while (a = Actor(Handler.Actors.Next()))
+				if (Handler.Actors)
 				{
-					if (a == plr || a.Player && a.Player.mo != a || a.Health <= 0 || plr.Distance2D(a) - a.Radius + a.Vel.length() > fullScanDist || Inventory(a) && Inventory(a).Owner)
-					{
-						continue;
-					}
+					Handler.Actors.ReInit();
 
-					bool blipExists = false;
-					for (int i = 0; i < RadarBlips.Size(); ++i)
+					int fullScanDist = max(zradar_distance, zradar_overdistance);
+					Actor a = null;
+					while (a = Actor(Handler.Actors.Next()))
 					{
-						if (RadarBlips[i].Other == a && RadarBlips[i].Alpha > 0.25)
+						if (a == plr || a.Player && a.Player.mo != a || a.Health <= 0 || plr.Distance2D(a) - a.Radius + a.Vel.length() > fullScanDist || Inventory(a) && Inventory(a).Owner)
 						{
-							blipExists = true;
-							break;
+							continue;
+						}
+
+						bool blipExists = false;
+						for (int i = 0; i < RadarBlips.Size(); ++i)
+						{
+							if (RadarBlips[i].Other == a && RadarBlips[i].Alpha > 0.25)
+							{
+								blipExists = true;
+								break;
+							}
+						}
+
+						if (blipExists)
+						{
+							continue;
+						}
+
+						RadarBlip blip = Handler.TryMakeBlip(RadarState, Handler.ValidActors.GetInt(), plr, a);
+						if (blip)
+						{
+							RadarBlips.Push(blip);
 						}
 					}
 
-					if (blipExists)
+					int refSoundContact = CVar.GetCVar('zradar_refreshsound_contact', players[Index]).GetInt();
+					int refSoundClear = CVar.GetCVar('zradar_refreshsound_clear', players[Index]).GetInt();
+					if (plr && RefSoundContact > 0 && (speed == 0 || curScanIndex % 4 == 0))
 					{
-						continue;
+						string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..refSoundContact : "Radar/RefreshSound/Clear"..refSoundClear;
+						plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, CVar.GetCVar('zradar_refreshsoundvolume', players[Index]).GetFloat());
 					}
-
-					RadarBlip blip = Handler.TryMakeBlip(RadarState, Handler.ValidActors.GetInt(), plr, a);
-					if (blip)
-					{
-						RadarBlips.Push(blip);
-					}
-				}
-
-				int refSoundContact = CVar.GetCVar('zradar_refreshsound_contact', players[Index]).GetInt();
-				int refSoundClear = CVar.GetCVar('zradar_refreshsound_clear', players[Index]).GetInt();
-				if (plr && RefSoundContact > 0 && (speed == 0 || curScanIndex % 4 == 0))
-				{
-					string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..refSoundContact : "Radar/RefreshSound/Clear"..refSoundClear;
-					plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, CVar.GetCVar('zradar_refreshsoundvolume', players[Index]).GetFloat());
 				}
 			}
 
@@ -272,7 +275,7 @@ class ZRadarMainHandler : EventHandler
 	transient CVar ValidActors;
 
 	protected int ReInitCount;
-	ThinkerIterator Actors;
+	transient ThinkerIterator Actors;
 
 	ZRadarData Data[MAXPLAYERS];
 
