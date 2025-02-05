@@ -1,10 +1,10 @@
 version "4.6"
 
-enum RMode
+enum RState
 {
-	Mode_Disabled,
-	Mode_Full,
-	Mode_Local
+	State_Disabled,
+	State_Full,
+	State_Local
 }
 
 class RadarBlip
@@ -25,16 +25,16 @@ class RadarBlip
 	}
 
 	Actor Other;
-	vector3 Diff;
-	vector2 DrawPos;
+	Vector3 Diff;
+	Vector2 DrawPos;
 	string Icon, IconBelow, IconAbove;
 	Color DrawCol;
-	vector2 DrawBox;
+	Vector2 DrawBox;
 	bool IsHostile;
 	bool Scanned;
 	double Alpha;
 
-	static RadarBlip Create(PlayerPawn plr, Actor other, string iconNormal, Color drawCol, string iconBelow = "", string iconAbove = "", vector2 drawBox = (5, 5))
+	static RadarBlip Create(PlayerPawn plr, Actor other, string iconNormal, Color drawCol, string iconBelow = "", string iconAbove = "", Vector2 drawBox = (5, 5))
 	{
 		let blip = new('RadarBlip');
 
@@ -56,132 +56,72 @@ class RadarBlip
 	}
 }
 
-class ZRadarMainHandler : EventHandler
+struct ZRadarData play
 {
-	// ----------------------------------------------------------
-	// CORE
-	// ----------------------------------------------------------
-
-	protected transient CVar DefaultRadarMode;
-	protected transient CVar SelectionMode;
-
-	protected transient CVar DrawOverHud;
-	protected transient CVar OffsetX;
-	protected transient CVar OffsetY;
-	protected transient CVar VisibilityFlags;
-	protected transient CVar Scale;
-	protected transient CVar Opacity;
-	protected transient CVar RadarColor;
-	protected transient CVar RangeUnits;
-	protected transient CVar RangeDivisions;
-
-	protected transient CVar ScanDistance;
-	protected transient CVar OverscanDistance;
-	protected transient CVar AngleLimit;
-	protected transient CVar ScanSpeed;
-
-	protected transient CVar ValidActors;
-
-	protected transient CVar RefreshSoundContact;
-	protected transient CVar RefreshSoundClear;
-	protected transient CVar RefreshSoundVolume;
-
-	protected transient CVar BatteryEnabled;
-	protected transient CVar BatteryDrainTime;
-	protected transient CVar BatteryRechargeTime;
-
-	int RadarMode[MAXPLAYERS]; // [Ace] This should have been called RadarState.
-	protected int BatteryPower[MAXPLAYERS];
-	protected int AccumulatedDrain[MAXPLAYERS];
-
-	protected transient Array<RadarBlip> RadarBlips;
-	protected transient double ScanAngle;
-	protected transient int LastScanIndex;
-	protected transient int LastRevolutions;
-
-	static void DestroyMainHandler()
+	void SetRadarState(int newState, bool silent = false)
 	{
-		let Handler = EventHandler.Find("ZRadarMainHandler");
-		if (Handler)
-		{
-			Handler.Destroy();
-		}
-	}
+		let plr = players[Index].mo;
 
-	override void OnRegister()
-	{
-		DefaultRadarMode = CVar.GetCVar('zradar_defmode', players[consoleplayer]);
-		SelectionMode = CVar.GetCVar('zradar_selectionmode', players[consoleplayer]);
-
-		DrawOverHud = CVar.GetCVar('zradar_drawoverhud', players[consoleplayer]);
-		OffsetX = CVar.GetCVar('zradar_offset_x', players[consoleplayer]);
-		OffsetY = CVar.GetCVar('zradar_offset_y', players[consoleplayer]);
-		Scale = CVar.GetCVar('zradar_scale', players[consoleplayer]);
-		Opacity = CVar.GetCVar('zradar_opacity', players[consoleplayer]);
-		RadarColor = CVar.GetCVar('zradar_color', players[consoleplayer]);
-		RangeUnits = CVar.GetCVar('zradar_rangeunits', players[consoleplayer]);
-		RangeDivisions = CVar.GetCVar('zradar_rangedivisions', players[consoleplayer]);
-		VisibilityFlags = CVar.GetCVar('zradar_visibility', players[consoleplayer]);
-
-		ScanDistance = CVar.GetCVar('zradar_distance');
-		OverscanDistance = CVar.GetCVar('zradar_overdistance');
-		AngleLimit = CVar.GetCVar('zradar_anglelimit');
-		ScanSpeed = CVar.GetCVar('zradar_scanspeed');
-
-		ValidActors = CVar.GetCVar('zradar_validactors');
-
-		RefreshSoundContact = CVar.GetCVar('zradar_refreshsound_contact', players[consoleplayer]);
-		RefreshSoundClear = CVar.GetCVar('zradar_refreshsound_clear', players[consoleplayer]);
-		RefreshSoundVolume = CVar.GetCVar('zradar_refreshsoundvolume', players[consoleplayer]);
-		
-		BatteryEnabled = CVar.GetCVar('zradar_battery_enable');
-		BatteryDrainTime = CVar.GetCVar('zradar_battery_draintime');
-		BatteryRechargeTime = CVar.GetCVar('zradar_battery_rechargetime');
-	}
-
-	override void WorldLoaded(WorldEvent e)
-	{
-		BatteryPower[consoleplayer] = 100;
-		SetRadarMode(consoleplayer, DefaultRadarMode.GetInt(), true);
-	}
-
-	override void WorldTick()
-	{
-		if (GameState != GS_LEVEL)
+		if (!plr || plr.Health <= 0 || RadarState == State_Disabled && newState > State_Disabled && !Handler.CheckRadarCondition(plr) || RadarState == newState)
 		{
 			return;
 		}
 
-		int drainTime = int((35 * 60 * BatteryDrainTime.GetFloat()) / GetDrainMult(consoleplayer));
-		int rechargeTime = int(35 * 60 * BatteryRechargeTime.GetFloat());
-		let plr = players[consoleplayer].mo;
+		RadarState = newState;
 
-		if (!CheckRadarCondition(plr))
+		if (!silent)
 		{
-			SetRadarMode(consoleplayer, Mode_Disabled);
+			string Message = "";
+			switch (newState)
+			{
+				case State_Disabled: Message = "\c[Orange]Scanner Deactivated\c-"; break;
+				case State_Full: Message = "\c[Green]Full Scanner Activated\c-"; break;
+				case State_Local: Message = "\c[Red]Local Scanner Activated\c-"; break;	
+			}
+
+			plr.A_Print(Message, 1);
+			plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
+		}
+
+		Handler.OnStateChanged(plr, newState);
+
+		ScanAngle = 0;
+		LastScanIndex = 0;
+		RadarBlips.Clear();
+	}
+
+	void Tick()
+	{
+		int drainTime = int((35 * 60 * zradar_battery_draintime) / Handler.GetDrainMult(Index));
+		int rechargeTime = int(35 * 60 * zradar_battery_draintime);
+		let plr = players[Index].mo;
+
+		if (!Handler.CheckRadarCondition(plr))
+		{
+			SetRadarState(State_Disabled);
 			return;
 		}
 
 		// [Ace] Battery stuff.
-		if (BatteryEnabled.GetBool())
+		if (zradar_battery_enable)
 		{
 			// [Ace] Draining.
-			if (RadarMode[consoleplayer] > Mode_Disabled)
+			if (RadarState > State_Disabled)
 			{
-				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]++ / double(drainTime)) * 100);
+				BatteryPower = int((1.0 - AccumulatedDrain++ / double(drainTime)) * 100);
 
-				if (BatteryPower[consoleplayer] <= 0)
+				if (BatteryPower <= 0)
 				{
-					SetRadarMode(consoleplayer, Mode_Disabled);
+					SetRadarState(State_Disabled);
 				}
 			}
 
 			// [Ace] Recharging.
-			else if (RadarMode[consoleplayer] == Mode_Disabled && BatteryPower[consoleplayer] < 100)
+			else if (RadarState == State_Disabled && BatteryPower < 100)
 			{
-				BatteryPower[consoleplayer] = int((1.0 - AccumulatedDrain[consoleplayer]-- / double(rechargeTime)) * 100);
+				BatteryPower = int((1.0 - AccumulatedDrain-- / double(rechargeTime)) * 100);
 
-				if (plr && BatteryPower[consoleplayer] == 100)
+				if (plr && BatteryPower == 100)
 				{
 					plr.A_Print("\c[Cyan]Scanner fully charged!\c-", 2);
 					plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
@@ -189,14 +129,14 @@ class ZRadarMainHandler : EventHandler
 			}
 		}
 
-		if (RadarMode[consoleplayer] > Mode_Disabled)
+		if (RadarState > State_Disabled)
 		{
-			double speed = GetScanSpeed();
+			double speed = Handler.GetScanSpeed();
 
 			// [Ace] Blip cleanup.
 			for (int i = RadarBlips.Size() - 1; i >= 0; --i)
 			{
-				RadarBlip blip = RadarBlips[i];
+				let blip = RadarBlips[i];
 				if (!blip)
 				{
 					RadarBlips.Delete(i);
@@ -217,16 +157,16 @@ class ZRadarMainHandler : EventHandler
 
 			if (speed > 0)
 			{
-				int revolutions = int(ScanAngle / (speed * TICRATE));
+				int revolutions = int(ScanAngle / (speed * Object.TICRATE));
 				if (revolutions > LastRevolutions)
 				{
 					LastRevolutions = revolutions;
-					OnRevolution(plr);
+					Handler.OnRevolution(plr);
 				}
 			}
 
-			int curScanIndex = int(abs(ceil(ScanAngle / 90.0)));
-			if (speed == 0 && level.time % 35 == 0 || speed > 0 && (ScanAngle == 0 || LastScanIndex < curScanIndex))
+			int curScanIndex = int(abs(ceil(ScanAngle / 45.0)));
+			if (speed == 0 && Level.time % 35 == 0 || speed > 0 && (ScanAngle == 0 || LastScanIndex < curScanIndex))
 			{
 				// [Ace] Actively clear array because the blips will not fade away on their own.
 				if (speed == 0)
@@ -238,11 +178,13 @@ class ZRadarMainHandler : EventHandler
 					LastScanIndex++;
 				}
 
-				int fullScanDist = max(ScanDistance.Getint(), OverscanDistance.GetInt());
-				BlockThingsIterator it = BlockThingsIterator.Create(plr, fullScanDist);
-				while (it.Next())
+				Handler.Actors.ReInit();
+
+				int fullScanDist = max(zradar_distance, zradar_overdistance);
+				Actor a = null;
+				while (a = Actor(Handler.Actors.Next()))
 				{
-					if (it.thing == players[consoleplayer].mo || it.thing.Health <= 0 || players[consoleplayer].mo.Distance2D(it.thing) - it.thing.Radius + it.thing.vel.length() > fullScanDist)
+					if (a == plr || a.Player && a.Player.mo != a || a.Health <= 0 || plr.Distance2D(a) - a.Radius + a.Vel.length() > fullScanDist || Inventory(a) && Inventory(a).Owner)
 					{
 						continue;
 					}
@@ -250,7 +192,7 @@ class ZRadarMainHandler : EventHandler
 					bool blipExists = false;
 					for (int i = 0; i < RadarBlips.Size(); ++i)
 					{
-						if (RadarBlips[i].Other == it.thing && RadarBlips[i].Alpha > 0.25)
+						if (RadarBlips[i].Other == a && RadarBlips[i].Alpha > 0.25)
 						{
 							blipExists = true;
 							break;
@@ -262,19 +204,19 @@ class ZRadarMainHandler : EventHandler
 						continue;
 					}
 
-					RadarBlip blip = TryMakeBlip(RadarMode[consoleplayer], ValidActors.GetInt(), players[consoleplayer].mo, it.thing);
+					RadarBlip blip = Handler.TryMakeBlip(RadarState, Handler.ValidActors.GetInt(), plr, a);
 					if (blip)
 					{
 						RadarBlips.Push(blip);
 					}
 				}
 
-				int refSoundContact = RefreshSoundContact.GetInt();
-				int refSoundClear = RefreshSoundClear.GetInt();
+				int refSoundContact = CVar.GetCVar('zradar_refreshsound_contact', players[Index]).GetInt();
+				int refSoundClear = CVar.GetCVar('zradar_refreshsound_clear', players[Index]).GetInt();
 				if (plr && RefSoundContact > 0 && (speed == 0 || curScanIndex % 4 == 0))
 				{
 					string snd = GetHostileBlipCount() > 0 ? "Radar/RefreshSound/Contact"..refSoundContact : "Radar/RefreshSound/Clear"..refSoundClear;
-					plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, RefreshSoundVolume.GetFloat());
+					plr.A_StartSound(snd, 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP, CVar.GetCVar('zradar_refreshsoundvolume', players[Index]).GetFloat());
 				}
 			}
 
@@ -285,62 +227,141 @@ class ZRadarMainHandler : EventHandler
 		}
 	}
 
-	override void NetworkProcess(ConsoleEvent e)
+	protected clearscope int GetHostileBlipCount()
 	{
-		if (e.Name ~== "ChangeRadarMode")
+		int blips = 0;
+		for (int i = 0; i < RadarBlips.Size(); ++i)
 		{
-			// [Ace] Force radar refresh when you switch modes.
-			int selMode = SelectionMode.GetInt();
-			
-			// [Ace] Cycle modes.
-			if (selMode == -1)
+			if (RadarBlips[i].IsHostile)
 			{
-				SetRadarMode(e.Player, (RadarMode[e.Player] + 1) % (Mode_Local + 1));
+				blips++;
 			}
+		}
+		return blips;
+	}
 
-			// [Ace] Or toggle between disabled and the selected mode.
-			else
-			{
-				SetRadarMode(e.Player, RadarMode[e.Player] == selMode ? 0 : selMode);
-			}
+	ZRadarMainHandler Handler;
+
+	int Index;
+	int RadarState;
+	int BatteryPower;
+	int AccumulatedDrain;
+
+	transient Array<RadarBlip> RadarBlips;
+	transient double ScanAngle;
+	transient int LastScanIndex;
+	transient int LastRevolutions;
+}
+
+class ZRadarMainHandler : EventHandler
+{
+	// ----------------------------------------------------------
+	// CORE
+	// ----------------------------------------------------------
+
+	protected transient CVar DrawOverHud;
+	protected transient CVar OffsetX;
+	protected transient CVar OffsetY;
+	protected transient CVar VisibilityFlags;
+	protected transient CVar Scale;
+	protected transient CVar Opacity;
+	protected transient CVar RadarColor;
+	protected transient CVar RangeUnits;
+	protected transient CVar RangeDivisions;
+
+	transient CVar ValidActors;
+
+	protected int ReInitCount;
+	ThinkerIterator Actors;
+
+	ZRadarData Data[MAXPLAYERS];
+
+	static void DestroyMainHandler()
+	{
+		let Handler = EventHandler.Find("ZRadarMainHandler");
+		if (Handler)
+		{
+			Handler.Destroy();
 		}
 	}
 
-	protected void SetRadarMode(int plrIndex, int mode, bool silent = false)
+	override void OnRegister()
 	{
-		let plr = players[plrIndex].mo;
-		if (!plr || plr.Health <= 0 || RadarMode[plrIndex] == Mode_Disabled && mode > Mode_Disabled && !CheckRadarCondition(plr) || RadarMode[plrIndex] == mode)
+		DrawOverHud = CVar.GetCVar('zradar_drawoverhud', players[consoleplayer]);
+		OffsetX = CVar.GetCVar('zradar_offset_x', players[consoleplayer]);
+		OffsetY = CVar.GetCVar('zradar_offset_y', players[consoleplayer]);
+		Scale = CVar.GetCVar('zradar_scale', players[consoleplayer]);
+		Opacity = CVar.GetCVar('zradar_opacity', players[consoleplayer]);
+		RadarColor = CVar.GetCVar('zradar_color', players[consoleplayer]);
+		RangeUnits = CVar.GetCVar('zradar_rangeunits', players[consoleplayer]);
+		RangeDivisions = CVar.GetCVar('zradar_rangedivisions', players[consoleplayer]);
+		VisibilityFlags = CVar.GetCVar('zradar_visibility', players[consoleplayer]);
+
+		ValidActors = CVar.GetCVar('zradar_validactors');
+	}
+
+	override void WorldLoaded(WorldEvent e)
+	{
+		for (int i = 0; i < MAXPLAYERS; ++i)
+		{
+			Data[i].Index = i;
+			Data[i].Handler = self;
+			Data[i].BatteryPower = 100;
+			Data[i].SetRadarState(playeringame[i] ? CVar.GetCVar('zradar_defmode', players[i]).GetInt() : State_Disabled, true);
+		}
+	}
+
+	override void WorldTick()
+	{
+		if (GameState != GS_LEVEL)
 		{
 			return;
 		}
 
-		RadarMode[plrIndex] = mode;
-
-		if (!silent && plrIndex == consoleplayer)
+		if (Level.time % (TICRATE * 10) == 0)
 		{
-			string Message = "";
-			switch (mode)
-			{
-				case Mode_Disabled: Message = "\c[Orange]Scanner Deactivated\c-"; break;
-				case Mode_Full: Message = "\c[Green]Full Scanner Activated\c-"; break;
-				case Mode_Local: Message = "\c[Red]Local Scanner Activated\c-"; break;	
-			}
-
-			plr.A_Print(Message, 1);
-			plr.A_StartSound("Radar/GenAlert", 7, CHANF_UI | CHANF_LOCAL | CHANF_OVERLAP);
+			Actors = ThinkerIterator.Create('Actor');
 		}
 
-		OnModeChanged(plr, mode);
-
-		ScanAngle = 0;
-		LastScanIndex = 0;
-		RadarBlips.Clear();
+		for (int i = 0; i < MAXPLAYERS; ++i)
+		{
+			if (playeringame[i])
+			{
+				Data[i].Tick();
+			}
+		}
 	}
 
-	protected virtual void OnModeChanged(PlayerPawn plr, int newMode) {}
-	protected virtual void OnRevolution(PlayerPawn plr) {}
+	void ChangeState(int plrNum)
+	{
+		// [Ace] Force radar refresh when you switch states.
+		int selState = CVar.GetCVar('zradar_selectionmode', players[plrNum]).GetInt();
+		
+		// [Ace] Cycle states.
+		if (selState == -1)
+		{
+			Data[plrNum].SetRadarState((Data[plrNum].RadarState + 1) % (State_Local + 1));
+		}
 
-	protected virtual RadarBlip TryMakeBlip(int mode, int toggles, PlayerPawn plr, Actor other)
+		// [Ace] Or toggle between disabled and the selected state.
+		else
+		{
+			Data[plrNum].SetRadarState(Data[plrNum].RadarState == selState ? 0 : selState);
+		}
+	}
+
+	override void NetworkProcess(ConsoleEvent e)
+	{
+		if (e.Name ~== "ZR_ChangeState")
+		{
+			ChangeState(e.Player);
+		}
+	}
+
+	virtual void OnStateChanged(PlayerPawn plr, int newState) {}
+	virtual void OnRevolution(PlayerPawn plr) {}
+
+	virtual RadarBlip TryMakeBlip(int state, int toggles, PlayerPawn plr, Actor other)
 	{
 		if (!plr || !other)
 		{
@@ -348,8 +369,8 @@ class ZRadarMainHandler : EventHandler
 		}
 
 		// [Ace] Pick the ones you want to check in each condition below.
-		bool full = mode == Mode_Full;
-		bool local = mode == Mode_Local && plr.CheckSight(other);
+		bool full = state == State_Full;
+		bool local = state == State_Local && plr.CheckSight(other);
 
 		if (full || local)
 		{
@@ -425,7 +446,7 @@ class ZRadarMainHandler : EventHandler
 	{
 		if (!DrawOverHud.GetBool())
 		{
-			DrawRadar(e.Camera);
+			DrawRadar(Data[e.Camera.PlayerNumber()]);
 		}
 	}
 
@@ -433,20 +454,21 @@ class ZRadarMainHandler : EventHandler
 	{
 		if (DrawOverHud.GetBool())
 		{
-			DrawRadar(e.Camera);
+			DrawRadar(Data[e.Camera.PlayerNumber()]);
 		}
 	}
 
-	protected ui void DrawRadar(Actor whomstve)
+	protected ui void DrawRadar(ZRadarData dt)
 	{
-		if (GameState != GS_LEVEL || AutomapActive || RadarMode[consoleplayer] == Mode_Disabled || whomstve != players[consoleplayer].mo)
+		if (GameState != GS_LEVEL || AutomapActive || dt.RadarState == State_Disabled)
 		{
 			return;
 		}
 		
 		mMainFont = HUDFont.Create(FontName);
 
-		let plr = PlayerPawn(whomstve);
+		let plr = PlayerPawn(players[dt.Index].mo);
+
 		int OriginalWidth = StatusBar.HorizontalResolution;
 		int OriginalHeight = StatusBar.VerticalResolution;
 
@@ -454,14 +476,14 @@ class ZRadarMainHandler : EventHandler
 
 		int visFlags = VisibilityFlags.GetInt();
 
-		double angleLimit = clamp(AngleLimit.GetInt(), 0, 360);
+		double angleLimit = clamp(zradar_anglelimit, 0, 360);
 		if (angleLimit == 0)
 		{
 			angleLimit = plr.player.FOV;
 		}
 
-		int fullScanDist = max(ScanDistance.GetInt(), OverscanDistance.GetInt());
-		int minScanDist = min(ScanDistance.GetInt(), OverscanDistance.GetInt());
+		int fullScanDist = max(zradar_distance, zradar_overdistance);
+		int minScanDist = min(zradar_distance, zradar_overdistance);
 		double speed = GetScanSpeed();
 
 		StatusBar.BeginHUD(1.0, true);
@@ -469,7 +491,7 @@ class ZRadarMainHandler : EventHandler
 
 		// --------------- SHARED ---------------
 
-		double alpha = GetAlpha();
+		double alpha = GetAlpha(dt.Index);
 
 		// --------------- CIRCLE ---------------
 
@@ -480,7 +502,7 @@ class ZRadarMainHandler : EventHandler
 		}
 		Color radCol = 0xFF000000 | rawCol;
 
-		vector2 radarPos = (OffsetX.GetInt(), OffsetY.GetInt());
+		Vector2 radarPos = (OffsetX.GetInt(), OffsetY.GetInt());
 		int drawFlags = GetAlignmentFlags(radarPos);
 		drawFlags |= StatusBar.DI_ITEM_CENTER;
 
@@ -497,7 +519,7 @@ class ZRadarMainHandler : EventHandler
 		// [Ace] Scan circle.
 		if (visFlags & 4 && speed > 0)
 		{
-			StatusBar.DrawImageRotated("ZRSCAN", radarPos, drawFlags, ScanAngle, alpha, col: radCol);
+			StatusBar.DrawImageRotated("ZRSCAN", radarPos, drawFlags, dt.ScanAngle, alpha, col: radCol);
 		}
 
 		// [Ace] Range circles.
@@ -525,13 +547,13 @@ class ZRadarMainHandler : EventHandler
 
 		// --------------- CROSS ---------------
 
-		int CrossColor = 0;
-		switch (RadarMode[plr.PlayerNumber()])
+		int crossCol = 0;
+		switch (dt.RadarState)
 		{
-			case Mode_Local: CrossColor = Font.CR_RED; break;
-			case Mode_Full: CrossColor = Font.CR_GREEN; break;
+			case State_Local: crossCol = Font.CR_RED; break;
+			case State_Full: crossCol = Font.CR_GREEN; break;
 		}
-		StatusBar.DrawString(mMainFont, "+", (radarPos.x - 4, radarPos.y - 4), drawFlags, CrossColor, alpha);
+		StatusBar.DrawString(mMainFont, "+", (radarPos.x - 4, radarPos.y - 4), drawFlags, crossCol, alpha);
 
 		// --------------- ANGLE HANDS ---------------
 
@@ -548,9 +570,9 @@ class ZRadarMainHandler : EventHandler
 
 		// --------------- BLIPS ---------------
 
-		for (int i = 0; i < RadarBlips.Size(); ++i)
+		for (int i = 0; i < dt.RadarBlips.Size(); ++i)
 		{
-			RadarBlip blip = RadarBlips[i];
+			let blip = dt.RadarBlips[i];
 			if (!blip)
 			{
 				continue;
@@ -563,7 +585,7 @@ class ZRadarMainHandler : EventHandler
 					continue;
 				}
 
-				if (Actor.AbsAngle(plr.AngleTo(blip.Other), plr.angle) > angleLimit / 2 || speed > 0 && Actor.AbsAngle(plr.AngleTo(blip.Other), ScanAngle + plr.angle) > speed)
+				if (Actor.AbsAngle(plr.AngleTo(blip.Other), plr.Angle) > angleLimit / 2 || speed > 0 && Actor.AbsAngle(plr.AngleTo(blip.Other), dt.ScanAngle + plr.Angle) > speed)
 				{
 					continue;
 				}
@@ -571,8 +593,8 @@ class ZRadarMainHandler : EventHandler
 				blip.Diff = (plr.pos.x - blip.Other.pos.x, plr.pos.y - blip.Other.pos.y, blip.Other.pos.z - plr.pos.z);
 				blip.DrawPos = 
 				(
-					blip.Diff.x * cos(-plr.angle) - blip.Diff.y * sin(-plr.angle),
-					blip.Diff.x * sin(-plr.angle) + blip.Diff.y * cos(-plr.angle)
+					blip.Diff.x * cos(-plr.Angle) - blip.Diff.y * sin(-plr.Angle),
+					blip.Diff.x * sin(-plr.Angle) + blip.Diff.y * cos(-plr.Angle)
 				);
 			}
 
@@ -595,7 +617,7 @@ class ZRadarMainHandler : EventHandler
 			// [Ace] I don't know why, I don't want to know why, I shouldn't have to wonder why, but for whatever reason, the X and Y coordinates are flipped.
 			// The magic number ensures the blips scale correctly with distance.
 			// I think the number is supposed to be the radar's radius minus the blip's radius.
-			vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / (minScanDist / 58.60)) + (radarPos.y, radarPos.x);
+			Vector2 finalPos = ((blip.DrawPos * outtaRangeFac) / (minScanDist / 58.60)) + (radarPos.y, radarPos.x);
 			
 			StatusBar.DrawImage(blip.GetIcon(), (finalPos.y, finalPos.x), drawFlags, alpha * blip.Alpha * max(0.5, outtaRangeFac ** 2.5), blip.DrawBox, col: blip.DrawCol);
 		}
@@ -610,48 +632,7 @@ class ZRadarMainHandler : EventHandler
 	// INFORMATION
 	// ----------------------------------------------------------
 
-	// [Ace] This returns angle change per tic and not the raw revolutions per tic.
-	clearscope double GetScanSpeed()
-	{
-		double speed = ScanSpeed.GetFloat();
-		return speed * (360.0 / TICRATE);
-	}
-
-	protected virtual ui double GetAlpha()
-	{
-		double Alpha = Opacity.GetFloat();
-		if (BatteryEnabled.GetBool())
-		{
-			double Mult = BatteryPower[consoleplayer] / 100.0;
-			Alpha *= max(0.35, Mult);
-		}
-		return Alpha;
-	}
-	protected virtual clearscope bool CheckRadarCondition(PlayerPawn plr) { return true; }
-
-	virtual double GetDrainMult(int plrIndex) const
-	{
-		switch (RadarMode[plrIndex])
-		{
-			case Mode_Local: return 0.5;
-			default: return 1.0;
-		}
-	}
-
-	protected clearscope int GetHostileBlipCount()
-	{
-		int blips = 0;
-		for (int i = 0; i < RadarBlips.Size(); ++i)
-		{
-			if (RadarBlips[i].IsHostile)
-			{
-				blips++;
-			}
-		}
-		return blips;
-	}
-
-	protected ui int GetAlignmentFlags(vector2 offsets) const
+	protected ui int GetAlignmentFlags(Vector2 offsets) const
 	{
 		int AlignFlags = 0;
 		if (offsets.x > 0)
@@ -681,5 +662,32 @@ class ZRadarMainHandler : EventHandler
 		}
 		
 		return AlignFlags;
+	}
+
+	// [Ace] This returns angle change per tic and not the raw revolutions per tic.
+	clearscope double GetScanSpeed()
+	{
+		return zradar_scanspeed * (360.0 / TICRATE);
+	}
+
+	virtual clearscope bool CheckRadarCondition(PlayerPawn plr) const { return true; }
+
+	protected virtual ui double GetAlpha(int plrNum)
+	{
+		double al = Opacity.GetFloat();
+
+		double mult = Data[plrNum].BatteryPower / 100.0;
+		al *= max(0.35, mult);
+
+		return al;
+	}
+
+	virtual double GetDrainMult(int plrNum) const
+	{
+		switch (Data[plrNum].RadarState)
+		{
+			case State_Local: return 0.5;
+			default: return 1.0;
+		}
 	}
 }
