@@ -516,7 +516,7 @@ class ZRadarMainHandler : EventHandler
 		}
 		if (visFlags & 2)
 		{
-			StatusBar.DrawImage("ZRLINES", radarPos, drawFlags, alpha, col: radCol);
+			StatusBar.DrawImage("ZRLINES", radarPos, drawFlags, alpha * 0.5, col: radCol);
 		}
 
 		// [Ace] Scan circle.
