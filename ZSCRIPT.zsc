@@ -11,6 +11,7 @@ class RadarBlip
 {
 	enum BlipColors
 	{
+		Col_White = 0xFFFFFFFF,
 		Col_Red = 0xFFFF2222,
 		Col_Orange = 0xFFFF7711,
 		Col_Gold = 0xFFFFDD00,
@@ -430,7 +431,7 @@ class ZRadarMainHandler : EventHandler
 			}
 			if (toggles & 1 << 9 && other.bCOUNTITEM && !(other is 'BasicArmorBonus') && !(other is 'PowerupGiver'))
 			{
-				return RadarBlip.Create(plr, other, "BLPSQARE", RadarBlip.Col_Gold, drawBox: (3, 3));
+				return RadarBlip.Create(plr, other, "BLPSQARE", RadarBlip.Col_White, drawBox: (3, 3));
 			}
 		}
 		
